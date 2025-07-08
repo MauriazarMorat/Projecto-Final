@@ -10,6 +10,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/',
         builder: (context, state) => const HomeScreen(),
       ),
+      GoRoute(
+        path:  '/video',
+        builder: (context, state) => const VideoScreen(),
+        ),
     ],
   );
 });
