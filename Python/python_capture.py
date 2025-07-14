@@ -22,7 +22,13 @@ class VideoCapture:
         # Información del video
         self.fps = 30
         self.frame_delay = 1.0 / 30
-        
+
+        # Calcular ruta a carpeta_frames relativa a la carpeta raíz Proyecto-Final
+        current_dir = os.path.dirname(os.path.abspath(__file__))  # .../Proyecto-Final/Python
+        project_root = os.path.dirname(current_dir)              # .../Proyecto-Final
+        self.save_dir = os.path.join(project_root, "carpeta_frames")
+        os.makedirs(self.save_dir, exist_ok=True)
+
     def start_capture(self):
         """Inicia la captura de video en un hilo separado"""
         if not self.is_running:
@@ -115,12 +121,11 @@ class VideoCapture:
             return []
         
         results = []
-        save_dir = os.path.join(os.path.dirname(__file__), "captured_frames")
-        os.makedirs(save_dir, exist_ok=True)
+       
     
         for frame_data in self.captured_frames:
             filename = f"captured_frame_{frame_data['timestamp']}.jpg"
-            filepath = os.path.join(save_dir, filename)
+            filepath = os.path.join(self.save_dir, filename)
 
             cv2.imwrite(filepath, frame_data["frame"])
             

@@ -8,7 +8,6 @@ class VideoScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // connectionNotifier solo creado una vez aquí
     final connectionNotifier = ValueNotifier<bool>(false);
 
     return ValueListenableBuilder<bool>(
@@ -53,9 +52,10 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
   }
 
   void connectToServer() {
-    // Cerrar canal anterior si existe
+    // Cerrar canal previo si existe
     if (channel != null) {
       channel!.sink.close();
+      channel = null;
     }
 
     try {
@@ -68,25 +68,26 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         onError: (error) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             connectionNotifier.value = false;
+            if (!mounted) return;
             setState(() {
               statusMessage = "Error: $error";
             });
           });
         },
         onDone: () {
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    connectionNotifier.value = false;
-    if (!mounted) return;  // <- esto evita el error
-    setState(() {
-      statusMessage = "Conexión cerrada";
-    });
-  });
-},
-
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            connectionNotifier.value = false;
+            if (!mounted) return;
+            setState(() {
+              statusMessage = "Conexión cerrada";
+            });
+          });
+        },
       );
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         connectionNotifier.value = true;
+        if (!mounted) return;
         setState(() {
           statusMessage = "Conectado";
         });
@@ -94,6 +95,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
     } catch (e) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         connectionNotifier.value = false;
+        if (!mounted) return;
         setState(() {
           statusMessage = "Error al conectar: $e";
         });
@@ -148,8 +150,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Resultados del Procesamiento'),
-        content: Container(
+        title: const Text('Resultados del Procesamiento'),
+        content: SizedBox(
           width: double.maxFinite,
           child: ListView.builder(
             shrinkWrap: true,
@@ -159,7 +161,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               return ListTile(
                 title: Text(result['filename']),
                 subtitle: Text('Predicción: ${result['prediction']}'),
-                trailing: Text('${(result['confidence'] * 100).toStringAsFixed(1)}%'),
+                trailing:
+                    Text('${(result['confidence'] * 100).toStringAsFixed(1)}%'),
               );
             },
           ),
@@ -167,7 +170,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cerrar'),
+            child: const Text('Cerrar'),
           ),
         ],
       ),
@@ -195,18 +198,15 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Status bar
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           color: Colors.grey[200],
           child: Text(
             statusMessage,
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
-
-        // Video display
         Expanded(
           child: Container(
             width: double.infinity,
@@ -219,7 +219,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                 : Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                      children: const [
                         CircularProgressIndicator(),
                         SizedBox(height: 16),
                         Text("Esperando video..."),
@@ -228,10 +228,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                   ),
           ),
         ),
-
-        // Control buttons
         Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Row(
@@ -239,38 +237,41 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                 children: [
                   ElevatedButton.icon(
                     onPressed: isConnected ? () => sendCommand("capture") : null,
-                    icon: Icon(Icons.camera_alt),
-                    label: Text("Capturar"),
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text("Capturar"),
                   ),
                   ElevatedButton.icon(
-                    onPressed: isConnected && capturedCount > 0 ? () => sendCommand("process") : null,
-                    icon: Icon(Icons.psychology),
+                    onPressed: isConnected && capturedCount > 0
+                        ? () => sendCommand("process")
+                        : null,
+                    icon: const Icon(Icons.psychology),
                     label: Text("Procesar ($capturedCount)"),
                   ),
                 ],
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: isConnected && capturedCount > 0 ? () => sendCommand("clear") : null,
-                    icon: Icon(Icons.clear),
-                    label: Text("Limpiar"),
+                    onPressed:
+                        isConnected && capturedCount > 0 ? () => sendCommand("clear") : null,
+                    icon: const Icon(Icons.clear),
+                    label: const Text("Limpiar"),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
                   ),
                   ElevatedButton.icon(
                     onPressed: isConnected ? () => sendCommand("status") : null,
-                    icon: Icon(Icons.info),
-                    label: Text("Estado"),
+                    icon: const Icon(Icons.info),
+                    label: const Text("Estado"),
                   ),
                 ],
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               ElevatedButton.icon(
                 onPressed: !isConnected ? connectToServer : null,
-                icon: Icon(Icons.refresh),
-                label: Text("Reconectar"),
+                icon: const Icon(Icons.refresh),
+                label: const Text("Reconectar"),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
               ),
             ],
