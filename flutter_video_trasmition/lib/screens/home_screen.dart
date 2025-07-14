@@ -1,17 +1,7 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_video_trasmition/screens/video_screen.dart';
 // Pantalla de ejemplo para navegación
-class VideoScreen extends StatelessWidget {
-  const VideoScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Video')),
-      body: const Center(child: Text('Aquí va tu video 🎥')),
-    );
-  }
-}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
