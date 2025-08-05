@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_video_trasmition/screens/video_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_video_trasmition/providers/server_connection_provider.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+
 // Pantalla de ejemplo para navegación
 
 
@@ -103,12 +107,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             color: const Color(0xFFA5D6A7),
                             icon: Icons.video_camera_back_rounded,
                             text: 'Ver video',
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const VideoScreen()),
-                              );
+                            onTap: () async {
+                              final connected = await checkWebSocketConnection();
+                              if (!mounted) return;
+                              if (connected) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const VideoScreen()),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("No se puede conectar al servidor WebSocket."),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             },
+
                           ),
                           buildHoverableCard(
                             index: 2,
@@ -180,6 +196,30 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
     return hslDark.toColor();
   }
+
+
+
+  Future<bool> checkWebSocketConnection() async {
+  try {
+    final channel = WebSocketChannel.connect(
+      Uri.parse("ws://localhost:8000"), // tu dirección y puerto WS
+    );
+
+    // Esperamos una respuesta o timeout
+    final response = await channel.stream.first.timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => "timeout",
+    );
+
+    channel.sink.close();
+
+    // Si recibimos algo que no sea "timeout", hay conexión
+    return response != "timeout";
+  } catch (e) {
+    return false;
+  }
+  }
+
 
   /// Tarjeta con InkWell y hover color
   Widget buildCard({
