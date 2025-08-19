@@ -87,7 +87,9 @@ class VideoCapture:
     
     def capture_current_frame(self, NDV, NDC):
         """Captura el frame actual y lo guarda solo en memoria"""
+        print(f"DEBUG: latest_frame is None? {self.latest_frame is None}")
         if self.latest_frame is not None:
+            print(f"DEBUG: Frame shape: {self.latest_frame.shape}")
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
             filename = f"{NDV}_{NDC}_{timestamp}.jpg"
 
@@ -116,7 +118,9 @@ class VideoCapture:
     
     def process_captured_frames(self):
         """Guarda todos los frames capturados en disco y limpia memoria"""
+        print(f"DEBUG: Iniciando process_captured_frames, frames disponibles: {len(self.captured_frames)}")
         if not self.captured_frames:
+            print("DEBUG: NO HAY FRAMES")
             return []
 
         results = []
