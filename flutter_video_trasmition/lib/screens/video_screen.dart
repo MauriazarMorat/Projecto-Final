@@ -42,65 +42,71 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
   int capturedCount = 0;
   String statusMessage = "Desconectado";
 
+  final TextEditingController ndvController = TextEditingController();
+  final TextEditingController ndcController = TextEditingController();
+
+  String? lastNDV;
+  String? lastNDC;
+
   ValueNotifier<bool> get connectionNotifier => widget.connectionNotifier;
   bool get isConnected => connectionNotifier.value;
 
   @override
-  void initState() {
-    super.initState();
-    connectToServer();
-  }
+void initState() {
+  super.initState();
+
+  clearFrames();        // <--- Limpiar al entrar
+  connectToServer();
+}
+
+void clearFrames() {
+  if (!mounted) return;
+  setState(() {
+    currentFrame = null;
+    capturedCount = 0;
+    lastNDV = null;
+    lastNDC = null;
+    statusMessage = "Limpiando frames...";
+  });
+
+  sendCommand("clear"); // Enviar al servidor para que también limpie
+}
 
   void connectToServer() {
-    // Cerrar canal previo si existe
-    if (channel != null) {
-      channel!.sink.close();
-      channel = null;
-    }
+    channel?.sink.close();
+    channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8000'));
 
-    try {
-      channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8000'));
-
-      channel!.stream.listen(
-        (data) {
-          handleMessage(data);
-        },
-        onError: (error) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            connectionNotifier.value = false;
-            if (!mounted) return;
-            setState(() {
-              statusMessage = "Error: $error";
-            });
-          });
-        },
-        onDone: () {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            connectionNotifier.value = false;
-            if (!mounted) return;
-            setState(() {
-              statusMessage = "Conexión cerrada";
-            });
-          });
-        },
-      );
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        connectionNotifier.value = true;
+    channel!.stream.listen(
+      (data) => handleMessage(data),
+      onError: (error) {
         if (!mounted) return;
-        setState(() {
-          statusMessage = "Conectado";
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          connectionNotifier.value = false;
+          setState(() {
+            statusMessage = "Error: $error";
+          });
         });
-      });
-    } catch (e) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        connectionNotifier.value = false;
+      },
+      onDone: () {
         if (!mounted) return;
-        setState(() {
-          statusMessage = "Error al conectar: $e";
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          connectionNotifier.value = false;
+          setState(() {
+            statusMessage = "Conexión cerrada";
+          });
         });
+      },
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      connectionNotifier.value = true;
+      setState(() {
+        statusMessage = "Conectado";
       });
-    }
+    });
   }
 
   void handleMessage(dynamic data) {
@@ -111,6 +117,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         final frameData = message['data'];
         final imageBytes = base64Decode(frameData);
 
+        if (!mounted) return;
         setState(() {
           currentFrame = imageBytes;
         });
@@ -118,12 +125,14 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         final status = message['status'];
 
         if (status == 'captured') {
+          if (!mounted) return;
           setState(() {
             capturedCount = message['count'];
             statusMessage = "Frame capturado (${message['count']} total)";
           });
         } else if (status == 'processed') {
           final results = message['results'];
+          if (!mounted) return;
           setState(() {
             statusMessage = "Procesados ${results.length} frames";
             capturedCount = 0;
@@ -131,15 +140,31 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
           showProcessResults(results);
         } else if (status == 'cleared') {
+          if (!mounted) return;
           setState(() {
-            capturedCount = 0;
-            statusMessage = "Frames limpiados";
-          });
+    capturedCount = 0;
+    currentFrame = null;   // <--- Aseguramos limpiar el frame
+    lastNDV = null;
+    lastNDC = null;
+    statusMessage = "Frames limpiados";
+  });
         } else if (status == 'no_frames') {
+          if (!mounted) return;
           setState(() {
             statusMessage = "No hay frames para procesar";
           });
-        }
+        } else if (status == 'undone') {
+  final count = message['count'];
+  final filename = message['filename'];
+  if (!mounted) return;
+  setState(() {
+    capturedCount = count;
+    statusMessage = "Última captura deshecha ($filename)";
+  });
+}
+
+
+
       }
     } catch (e) {
       print("Error al procesar mensaje: $e");
@@ -178,103 +203,173 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
   }
 
   void sendCommand(String command) {
-    if (isConnected && channel != null) {
-      channel!.sink.add(jsonEncode({"command": command}));
-    }
+    channel?.sink.add(jsonEncode({"command": command}));
+  }
+
+  void sendCommandWithData(String command,
+      {required String ndv, required String ndc}) {
+    channel?.sink.add(jsonEncode({
+      "command": command,
+      "NDV": ndv,
+      "NDC": ndc,
+    }));
   }
 
   @override
   void dispose() {
+    ndvController.dispose();
+    ndcController.dispose();
     try {
       sendCommand("stop");
-    } catch (e) {
-      // Ignorar error si no se puede enviar
-    }
+    } catch (_) {}
     channel?.sink.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          color: Colors.grey[200],
-          child: Text(
-            statusMessage,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Expanded(
+          flex: 3,
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                color: Colors.grey[200],
+                child: Text(
+                  statusMessage,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  child: currentFrame != null
+                      ? Image.memory(
+                          currentFrame!,
+                          fit: BoxFit.contain,
+                          gaplessPlayback: true,
+                        )
+                      : const Center(
+                          child: Text("Desconectado"),
+                        ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Parte de los botones dentro del Column en VideoStreamPage
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  children: [
+    ElevatedButton.icon(
+      onPressed: () {
+        final ndv = ndvController.text;
+        final ndc = ndcController.text;
+        if (ndv.isNotEmpty && ndc.isNotEmpty) {
+          lastNDV = ndv;
+          lastNDC = ndc;
+          sendCommandWithData("capture", ndv: ndv, ndc: ndc);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Debe ingresar NDV y NDC para capturar"),
+            ),
+          );
+        }
+      },
+      icon: const Icon(Icons.camera_alt),
+      label: const Text("Capturar"),
+    ),
+    ElevatedButton.icon(
+      onPressed: capturedCount > 0
+          ? () {
+              sendCommand("saveCaptures");
+              if (!mounted) return;
+              setState(() {
+                capturedCount = 0; // Después de guardar, se limpian las capturas
+                statusMessage = "Capturas guardadas";
+              });
+            }
+          : null,
+      icon: const Icon(Icons.save),
+      label: Text("Guardar ($capturedCount)"),
+    ),
+  ],
+),
+const SizedBox(height: 8),
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  children: [
+    ElevatedButton.icon(
+      onPressed: capturedCount > 0
+    ? () {
+        sendCommand("undo"); // Python borra la última
+      }
+    : null,
+
+      icon: const Icon(Icons.undo),
+      label: const Text("Deshacer"),
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+    ),
+    ElevatedButton.icon(
+      onPressed: () => sendCommand("status"),
+      icon: const Icon(Icons.info),
+      label: const Text("Estado"),
+    ),
+  ],
+),
+
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
         Expanded(
+          flex: 1,
           child: Container(
-            width: double.infinity,
-            child: currentFrame != null
-                ? Image.memory(
-                    currentFrame!,
-                    fit: BoxFit.contain,
-                    gaplessPlayback: true,
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text("Esperando video..."),
-                      ],
-                    ),
+            padding: const EdgeInsets.all(16),
+            color: Colors.grey[100],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  lastNDC != null
+                      ? "Último número de campo: $lastNDC"
+                      : "No hay último número de campo",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: ndcController,
+                  decoration: const InputDecoration(
+                    labelText: "NDC",
+                    border: OutlineInputBorder(),
                   ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: isConnected ? () => sendCommand("capture") : null,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text("Capturar"),
+                ),
+                Text(
+                  lastNDV != null
+                      ? "Último número de vuelo: $lastNDV"
+                      : "No hay último número de vuelo",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: ndvController,
+                  decoration: const InputDecoration(
+                    labelText: "NDV",
+                    border: OutlineInputBorder(),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: isConnected && capturedCount > 0
-                        ? () => sendCommand("process")
-                        : null,
-                    icon: const Icon(Icons.psychology),
-                    label: Text("Procesar ($capturedCount)"),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed:
-                        isConnected && capturedCount > 0 ? () => sendCommand("clear") : null,
-                    icon: const Icon(Icons.clear),
-                    label: const Text("Limpiar"),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: isConnected ? () => sendCommand("status") : null,
-                    icon: const Icon(Icons.info),
-                    label: const Text("Estado"),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: !isConnected ? connectToServer : null,
-                icon: const Icon(Icons.refresh),
-                label: const Text("Reconectar"),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              ),
-            ],
+                ),
+                const SizedBox(height: 16),
+                
+              ],
+            ),
           ),
         ),
       ],

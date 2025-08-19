@@ -24,8 +24,8 @@ class VideoCapture:
         self.frame_delay = 1.0 / 30
 
         # Calcular ruta a carpeta_frames relativa a la carpeta raíz Proyecto-Final
-        current_dir = os.path.dirname(os.path.abspath(__file__))  # .../Proyecto-Final/Python
-        project_root = os.path.dirname(current_dir)              # .../Proyecto-Final
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
         self.save_dir = os.path.join(project_root, "carpeta_frames")
         os.makedirs(self.save_dir, exist_ok=True)
 
@@ -53,7 +53,6 @@ class VideoCapture:
             self.is_running = False
             return
         
-        # Obtener FPS del video
         self.fps = cap.get(cv2.CAP_PROP_FPS)
         self.frame_delay = 1.0 / self.fps if self.fps > 0 else 1.0 / 30
         
@@ -64,12 +63,10 @@ class VideoCapture:
             ret, frame = cap.read()
             
             if not ret:
-                # Video terminó, reiniciar desde el principio
                 print("Video terminado, reiniciando...")
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
             
-            # Redimensionar si es muy grande (opcional)
             height, width = frame.shape[:2]
             if width > 1280:
                 scale = 1280 / width
@@ -77,11 +74,8 @@ class VideoCapture:
                 new_height = int(height * scale)
                 frame = cv2.resize(frame, (new_width, new_height))
             
-            # Actualizar buffer
             self.latest_frame = frame.copy()
             self.frame_buffer.append(frame)
-            
-            # Esperar según el FPS del video
             time.sleep(self.frame_delay)
         
         cap.release()
@@ -91,64 +85,65 @@ class VideoCapture:
         """Obtiene el frame más reciente"""
         return self.latest_frame
     
-    def capture_current_frame(self):
-        """Captura el frame actual para procesamiento posterior"""
+    def capture_current_frame(self, NDV, NDC):
+        """Captura el frame actual y lo guarda solo en memoria"""
         if self.latest_frame is not None:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            existing_frames = [
+                f for f in self.captured_frames
+                if f["numero_de_vuelo"] == NDV and f["numero_de_campo"] == NDC
+            ]
+            NC = len(existing_frames) + 1
+            filename = f"{NDC}_{NDV}_{NC}.jpg"
+
             frame_data = {
                 "frame": self.latest_frame.copy(),
-                "timestamp": timestamp
+                "numero_de_vuelo": NDV,
+                "numero_de_campo": NDC,
+                "capture_number": NC,
+                "filename": filename
             }
+
             self.captured_frames.append(frame_data)
-            print(f"Frame capturado: {timestamp}")
-            return len(self.captured_frames), timestamp
-        return 0, None
+            print(f"Frame capturado: {filename}")
+            return len(self.captured_frames), NC, filename
+
+        return 0, None, None
     
     def get_captured_frames(self):
-        """Obtiene todos los frames capturados"""
         return self.captured_frames
     
     def clear_captured_frames(self):
-        """Limpia todos los frames capturados"""
         count = len(self.captured_frames)
         self.captured_frames.clear()
         print(f"Limpiados {count} frames capturados")
         return count
     
     def process_captured_frames(self):
-        """Procesa todos los frames capturados y los guarda"""
+        """Guarda todos los frames capturados en disco y limpia memoria"""
         if not self.captured_frames:
             return []
-        
-        results = []
-       
-    
-        for frame_data in self.captured_frames:
-            filename = f"captured_frame_{frame_data['timestamp']}.jpg"
-            filepath = os.path.join(self.save_dir, filename)
 
-            cv2.imwrite(filepath, frame_data["frame"])
-            
-            # Simular resultado de procesamiento
-            # Aquí iría tu código de PyTorch
+        results = []
+        for frame_data in self.captured_frames:
+            filepath = os.path.join(self.save_dir, frame_data["filename"])
+            cv2.imwrite(filepath, frame_data["frame"])  # Guardar en disco
+
             result = {
-                "filename": filename,
-                "timestamp": frame_data["timestamp"],
-                "prediction": "simulado_resultado",
-                "confidence": 0.95,
+                "filename": frame_data["filename"],
+                "field": frame_data["numero_de_campo"],
+                "flight": frame_data["numero_de_vuelo"],
+                "capture": frame_data["numero_de_captura"],
                 "frame_shape": frame_data["frame"].shape
             }
+
             results.append(result)
-        
-        # Limpiar frames después de procesar
+
         processed_count = len(self.captured_frames)
         self.captured_frames.clear()
-        
-        print(f"Procesados {processed_count} frames")
+        print(f"Procesados y guardados {processed_count} frames")
         return results
     
     def get_status(self):
-        """Obtiene el estado actual del capturador"""
         return {
             "is_running": self.is_running,
             "fps": self.fps,
@@ -158,22 +153,15 @@ class VideoCapture:
             "video_path": self.video_path
         }
 
-# Ejemplo de uso
 if __name__ == "__main__":
-    # Cambiar por la ruta de tu video
     video_path = os.path.join(os.path.dirname(__file__), "VideoTest.mp4")
-    # Crear capturador
     capturer = VideoCapture(video_path)
-    
-    # Iniciar captura
     capturer.start_capture()
-    
+
     try:
-        # Mantener el programa corriendo
         while True:
             time.sleep(1)
             status = capturer.get_status()
             print(f"Estado: {status}")
     except KeyboardInterrupt:
-        print("\nDeteniendo...")
         capturer.stop_capture()
