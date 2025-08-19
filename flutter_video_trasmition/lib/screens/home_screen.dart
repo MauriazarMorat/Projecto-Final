@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_video_trasmition/screens/galery_screen.dart';
 import 'package:flutter_video_trasmition/screens/video_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_video_trasmition/providers/server_connection_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
+import '../screens/video_screen.dart';
 // Pantalla de ejemplo para navegación
 
 
@@ -91,7 +92,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             },
                             color: const Color(0xFF81D4FA),
                             icon: Icons.analytics,
-                            text: 'Estadísticas',
+                            text: 'Galeria',
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const GaleryScreen())
+                                  );
+                            },
                           ),
                           buildHoverableCard(
                             index: 1,

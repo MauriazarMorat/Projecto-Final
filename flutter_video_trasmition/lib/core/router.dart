@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../screens/home_screen.dart';
 import '../screens/video_screen.dart';
+import '../screens/galery_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -15,6 +16,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path:  '/video',
         builder: (context, state) => const VideoScreen(),
         ),
+        GoRoute(
+  path: '/gallery',
+  builder: (context, state) => const GaleryScreen(),
+),
+
     ],
   );
 });

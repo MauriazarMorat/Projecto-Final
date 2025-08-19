@@ -42,6 +42,13 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
   int capturedCount = 0;
   String statusMessage = "Desconectado";
 
+  // Para los TextField de NDV y NDC
+  final TextEditingController ndvController = TextEditingController();
+  final TextEditingController ndcController = TextEditingController();
+
+  String? lastNDV;
+  String? lastNDC;
+
   ValueNotifier<bool> get connectionNotifier => widget.connectionNotifier;
   bool get isConnected => connectionNotifier.value;
 
@@ -51,57 +58,38 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
     connectToServer();
   }
 
-  void connectToServer() {
-    // Cerrar canal previo si existe
-    if (channel != null) {
-      channel!.sink.close();
-      channel = null;
-    }
+ void connectToServer() {
+  channel?.sink.close();
+  channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8000'));
 
-    try {
-      channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8000'));
-
-      channel!.stream.listen(
-        (data) {
-          handleMessage(data);
-        },
-        onError: (error) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            connectionNotifier.value = false;
-            if (!mounted) return;
-            setState(() {
-              statusMessage = "Error: $error";
-            });
-          });
-        },
-        onDone: () {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            connectionNotifier.value = false;
-            if (!mounted) return;
-            setState(() {
-              statusMessage = "Conexión cerrada";
-            });
-          });
-        },
-      );
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        connectionNotifier.value = true;
-        if (!mounted) return;
-        setState(() {
-          statusMessage = "Conectado";
-        });
-      });
-    } catch (e) {
+  channel!.stream.listen(
+    (data) => handleMessage(data),
+    onError: (error) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         connectionNotifier.value = false;
-        if (!mounted) return;
         setState(() {
-          statusMessage = "Error al conectar: $e";
+          statusMessage = "Error: $error";
         });
       });
-    }
-  }
+    },
+    onDone: () {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        connectionNotifier.value = false;
+        setState(() {
+          statusMessage = "Conexión cerrada";
+        });
+      });
+    },
+  );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    connectionNotifier.value = true;
+    setState(() {
+      statusMessage = "Conectado";
+    });
+  });
+}
+
 
   void handleMessage(dynamic data) {
     try {
@@ -178,103 +166,164 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
   }
 
   void sendCommand(String command) {
-    if (isConnected && channel != null) {
-      channel!.sink.add(jsonEncode({"command": command}));
-    }
+    channel?.sink.add(jsonEncode({"command": command}));
+  }
+
+  void sendCommandWithData(String command,
+      {required String ndv, required String ndc}) {
+    channel?.sink.add(jsonEncode({
+      "command": command,
+      "NDV": ndv,
+      "NDC": ndc,
+    }));
   }
 
   @override
   void dispose() {
+    ndvController.dispose();
+    ndcController.dispose();
     try {
       sendCommand("stop");
-    } catch (e) {
-      // Ignorar error si no se puede enviar
-    }
+    } catch (_) {}
     channel?.sink.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          color: Colors.grey[200],
-          child: Text(
-            statusMessage,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-        ),
+        // Parte del video
         Expanded(
-          child: Container(
-            width: double.infinity,
-            child: currentFrame != null
-                ? Image.memory(
-                    currentFrame!,
-                    fit: BoxFit.contain,
-                    gaplessPlayback: true,
-                  )
-                : Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text("Esperando video..."),
-                      ],
-                    ),
-                  ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.all(16),
+          flex: 3,
           child: Column(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: isConnected ? () => sendCommand("capture") : null,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text("Capturar"),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: isConnected && capturedCount > 0
-                        ? () => sendCommand("process")
-                        : null,
-                    icon: const Icon(Icons.psychology),
-                    label: Text("Procesar ($capturedCount)"),
-                  ),
-                ],
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                color: Colors.grey[200],
+                child: Text(
+                  statusMessage,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed:
-                        isConnected && capturedCount > 0 ? () => sendCommand("clear") : null,
-                    icon: const Icon(Icons.clear),
-                    label: const Text("Limpiar"),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: isConnected ? () => sendCommand("status") : null,
-                    icon: const Icon(Icons.info),
-                    label: const Text("Estado"),
-                  ),
-                ],
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  child: currentFrame != null
+                      ? Image.memory(
+                          currentFrame!,
+                          fit: BoxFit.contain,
+                          gaplessPlayback: true,
+                        )
+                      : const Center(
+                          child: Text("Desconectado"),
+                        ),
+                ),
               ),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: !isConnected ? connectToServer : null,
-                icon: const Icon(Icons.refresh),
-                label: const Text("Reconectar"),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            final ndv = ndvController.text;
+                            final ndc = ndcController.text;
+                            if (ndv.isNotEmpty && ndc.isNotEmpty) {
+                              lastNDV = ndv;
+                              lastNDC = ndc;
+                              sendCommandWithData("capture",
+                                  ndv: ndv, ndc: ndc);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text("Debe ingresar NDV y NDC para capturar"),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text("Capturar"),
+                        ),
+                        ElevatedButton.icon(
+  onPressed:
+      capturedCount > 0 ? () => sendCommand("saveCaptures") : null,
+  icon: const Icon(Icons.psychology),
+  label: Text("Guardar ($capturedCount)"),
+),
+
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed:
+                              capturedCount > 0 ? () => sendCommand("clear") : null,
+                          icon: const Icon(Icons.clear),
+                          label: const Text("Limpiar"),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () => sendCommand("status"),
+                          icon: const Icon(Icons.info),
+                          label: const Text("Estado"),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
+          ),
+        ),
+        // Parte de los TextField para NDV y NDC
+        Expanded(
+          flex: 1,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.grey[100],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  lastNDV != null
+                      ? "Último número de vuelo: $lastNDV"
+                      : "No hay último número de vuelo",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: ndvController,
+                  decoration: const InputDecoration(
+                    labelText: "NDV",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  lastNDC != null
+                      ? "Último número de campo: $lastNDC"
+                      : "No hay último número de campo",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: ndcController,
+                  decoration: const InputDecoration(
+                    labelText: "NDC",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
