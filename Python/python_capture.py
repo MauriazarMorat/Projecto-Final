@@ -136,6 +136,7 @@ class VideoCapture:
         processed_count = len(self.captured_frames)
         self.captured_frames.clear()
         print(f"Procesados y guardados {processed_count} frames")
+        self.clear_captured_frames()
         return results
     
     def get_status(self):
