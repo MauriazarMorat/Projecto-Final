@@ -75,9 +75,6 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
     onDone: () {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         connectionNotifier.value = false;
-        setState(() {
-          statusMessage = "Conexión cerrada";
-        });
       });
     },
   );

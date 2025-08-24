@@ -70,7 +70,6 @@ class WebSocketServer:
                     await websocket.send(json.dumps({
                         "type": "response",
                         "status": "processed",
-                        "results: results,
                         "message": "Capturas guardadas"
                     }))
                 else:
