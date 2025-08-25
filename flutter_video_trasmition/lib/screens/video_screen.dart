@@ -54,10 +54,13 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
   @override
   void initState() {
-    super.initState();
-    connectToServer();
-  }
-
+  super.initState();
+  connectToServer();
+  // Esperar un momento y limpiar
+  Future.delayed(Duration(milliseconds: 500), () {
+    sendCommand("clear");
+  });
+}
  void connectToServer() {
   channel?.sink.close();
   channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8000'));
@@ -107,7 +110,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
             capturedCount = message['count'];
             statusMessage = "Frame capturado (${message['count']} total)";
           });
-        } else if (status == 'processed') {
+        } else if (status == 'saved') {
           final results = message['results'];
           setState(() {
             statusMessage = "Procesados ${results.length} frames";
@@ -249,7 +252,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                         ),
                         ElevatedButton.icon(
   onPressed:
-      capturedCount > 0 ? () => sendCommand("saveCaptures") : null,
+      capturedCount > 0 ? ()  => sendCommand("saveCaptures") : null,
   icon: const Icon(Icons.psychology),
   label: Text("Guardar ($capturedCount)"),
 ),

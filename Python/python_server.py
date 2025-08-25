@@ -69,15 +69,21 @@ class WebSocketServer:
                 if results:
                     await websocket.send(json.dumps({
                         "type": "response",
-                        "status": "processed",
-                        "message": "Capturas guardadas"
+                        "status": "saved",
+                        "message": f"Guardadas {len(results)} capturas",
+                        "count": 0,
+                        "results": results,
                     }))
                 else:
                     await websocket.send(json.dumps({
                         "type": "response",
                         "status": "no_frames",
-                        "message": "No hay frames para guardar"
+                        "message": "No hay frames para guardar",
+                        "count": 0,
+                        "results": []
                     }))
+                
+
             elif command_type == "undo":
                 if self.video_capture.captured_frames:
                     removed_frame = self.video_capture.captured_frames.pop()  # Quita la última captura
