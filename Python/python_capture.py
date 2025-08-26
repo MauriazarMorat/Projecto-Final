@@ -89,15 +89,26 @@ class VideoCapture:
         """Captura el frame actual y lo guarda solo en memoria"""
         print(f"DEBUG: latest_frame is None? {self.latest_frame is None}")
         if self.latest_frame is not None:
+
+            flight_key = f"{NDC}_{NDV}"
+
+            if flight_key not in self.flight_captures:
+                self.flight_captures[flight_key] = 0
+
+            next_capture_num = self.flight_captures[flight_key] + len([
+                f for f in self.captured_frames 
+                if f.get("NDC") == NDC and f.get("NDV") == NDV
+            ]) + 1
+
             print(f"DEBUG: Frame shape: {self.latest_frame.shape}")
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            filename = f"{NDV}_{NDC}_{timestamp}.jpg"
+            filename = f"NDC_{NDC}_NDV_{NDV}_NC_{next_capture_num:03d}.jpg"
 
             frame_data = {
                 "frame": self.latest_frame.copy(),
                 "timestamp": timestamp,
-                "numero_de_vuelo": NDV,
-                "numero_de_campo": NDC,
+                "NDC": NDC,
+                "NDV": NDV,
                 "filename": filename
             }
 
@@ -125,22 +136,36 @@ class VideoCapture:
             return []
 
         results = []
-        processed_count = len(self.captured_frames)  # Contar ANTES de procesar
+        flight_updates = {}
+        
     
         for frame_data in self.captured_frames:
             filepath = os.path.join(self.save_dir, frame_data["filename"])
             cv2.imwrite(filepath, frame_data["frame"])  # Guardar en disco
 
+
+            flight_key = f"{frame_data['NDC']}_{frame_data['NDV']}"
+            if flight_key not in flight_updates:
+                flight_updates[flight_key] = 0
+            flight_updates[flight_key] += 1
+
+
             result = {
             "filename": frame_data["filename"],
             "timestamp": frame_data["timestamp"],
-            "prediction": "simulado_resultado",
-            "confidence": 0.95,
-            "frame_shape": frame_data["frame"].shape
+            "NDC": frame_data["NDC"],
+            "NDV": frame_data["NDV"],
+            "capture_number": frame_data["capture_number"]
             }
             results.append(result)
 
+        for flight_key, count in flight_updates.items():
+            if flight_key not in self.flight_captures:
+                self.flight_captures[flight_key] = 0
+            self.flight_captures[flight_key] += count
+
         # Una sola limpieza
+        processed_count = len(self.captured_frames)  # Contar ANTES de procesar 
         self.captured_frames.clear()
         print(f"Procesados y guardados {processed_count} frames")
     

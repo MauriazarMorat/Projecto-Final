@@ -118,7 +118,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
           });
 
           showProcessResults(results);
-        } else if (status == 'cleared') {
+        } else if (status == 'undone') {
           setState(() {
             capturedCount = 0;
             statusMessage = "Frames limpiados";
@@ -265,17 +265,13 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                       children: [
                         ElevatedButton.icon(
                           onPressed:
-                              capturedCount > 0 ? () => sendCommand("clear") : null,
+                              capturedCount > 0 ? () => sendCommand("undo") : null,
                           icon: const Icon(Icons.clear),
-                          label: const Text("Limpiar"),
+                          label: const Text("Deshacer"),
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange),
                         ),
-                        ElevatedButton.icon(
-                          onPressed: () => sendCommand("status"),
-                          icon: const Icon(Icons.info),
-                          label: const Text("Estado"),
-                        ),
+                        
                       ],
                     ),
                   ],
@@ -293,21 +289,8 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  lastNDV != null
-                      ? "Último número de vuelo: $lastNDV"
-                      : "No hay último número de vuelo",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                TextField(
-                  controller: ndvController,
-                  decoration: const InputDecoration(
-                    labelText: "NDV",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                
+                
                 Text(
                   lastNDC != null
                       ? "Último número de campo: $lastNDC"
@@ -319,6 +302,21 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                   controller: ndcController,
                   decoration: const InputDecoration(
                     labelText: "NDC",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  lastNDV != null
+                      ? "Último número de vuelo: $lastNDV"
+                      : "No hay último número de vuelo",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: ndvController,
+                  decoration: const InputDecoration(
+                    labelText: "NDV",
                     border: OutlineInputBorder(),
                   ),
                 ),
