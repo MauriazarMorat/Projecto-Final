@@ -209,7 +209,7 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                 ),
               ),
               Expanded(
-                child: Container(
+                child: SizedBox(
                   width: double.infinity,
                   child: currentFrame != null
                       ? Image.memory(

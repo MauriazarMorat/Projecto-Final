@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_video_trasmition/screens/galery_screen.dart';
 import 'package:flutter_video_trasmition/screens/video_screen.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_video_trasmition/providers/server_connection_provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../screens/video_screen.dart';
 // Pantalla de ejemplo para navegación
 
 

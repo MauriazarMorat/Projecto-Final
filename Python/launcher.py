@@ -4,7 +4,6 @@ Ejecutor principal para el sistema de video streaming
 import asyncio
 import sys
 import os
-import cv2
 from python_server import WebSocketServer
 #C:\Users\Mauricio\Documents\GitHub\Projecto-Final\Python\Assets\VideoTest.mp4
 
