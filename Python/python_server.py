@@ -51,10 +51,16 @@ class WebSocketServer:
             command = json.loads(message)
             command_type = command.get("command")
             
+            print(f"DEBUG: Comando recibido: {command_type}")  # Agregado para debug
+            
             if command_type == "capture":
                 NDV = command.get("NDV", "NDV_default")
                 NDC = command.get("NDC", "NDC_default")
+                print(f"DEBUG: Capturando con NDV={NDV}, NDC={NDC}")  # Agregado para debug
+                
                 count, timestamp, filename = self.video_capture.capture_current_frame(NDV, NDC)
+                
+                print(f"DEBUG: Resultado captura - count={count}, filename={filename}")  # Agregado para debug
                 
                 await websocket.send(json.dumps({
                     "type": "response",
@@ -63,8 +69,10 @@ class WebSocketServer:
                     "timestamp": timestamp,
                     "filename": filename
                 }))
+                print(f"DEBUG: Respuesta enviada al cliente")  # Agregado para debug
 
             elif command_type == "saveCaptures":
+                print(f"DEBUG: Procesando capturas...")  # Agregado para debug
                 results = self.video_capture.process_captured_frames()
                 if results:
                     await websocket.send(json.dumps({
@@ -74,6 +82,7 @@ class WebSocketServer:
                         "count": 0,
                         "results": results,
                     }))
+                    print(f"DEBUG: {len(results)} capturas guardadas")  # Agregado para debug
                 else:
                     await websocket.send(json.dumps({
                         "type": "response",
@@ -82,11 +91,11 @@ class WebSocketServer:
                         "count": 0,
                         "results": []
                     }))
-                
+                    print(f"DEBUG: No había frames para guardar")  # Agregado para debug
 
             elif command_type == "undo":
                 if self.video_capture.captured_frames:
-                    removed_frame = self.video_capture.captured_frames.pop()  # Quita la última captura
+                    removed_frame = self.video_capture.captured_frames.pop()
                     count = len(self.video_capture.captured_frames)
                     await websocket.send(json.dumps({
                         "type": "response",
@@ -94,13 +103,14 @@ class WebSocketServer:
                         "count": count,
                         "filename": removed_frame["filename"]
                     }))
+                    print(f"DEBUG: Frame deshecho, quedan {count}")  # Agregado para debug
                 else:
                     await websocket.send(json.dumps({
                         "type": "response",
                         "status": "no_frames",
                         "message": "No hay frames para deshacer"
-                }))
-
+                    }))
+                    print(f"DEBUG: No había frames para deshacer")  # Agregado para debug
 
             elif command_type == "process":
                 await websocket.send(json.dumps({
@@ -109,6 +119,34 @@ class WebSocketServer:
                     "message": "Comando process no implementado"
                 }))
 
+            elif command_type == "deleteCapture":
+                NDV = command.get("NDV", "")
+                NDC = command.get("NDC", "")
+                filename = command.get("filename", "")
+                
+                print(f"DEBUG: Eliminando captura - NDC={NDC}, NDV={NDV}, filename={filename}")
+                
+                flight_key = f"{NDC}_{NDV}"
+                if flight_key in self.video_capture.flight_captures and self.video_capture.flight_captures[flight_key] > 0:
+                    self.video_capture.flight_captures[flight_key] -= 1
+                    self.video_capture.save_flight_captures()
+                    
+                    await websocket.send(json.dumps({
+                        "type": "response",
+                        "status": "deleted",
+                        "message": f"Captura eliminada: {filename}",
+                        "flight_key": flight_key,
+                        "new_count": self.video_capture.flight_captures[flight_key]
+                    }))
+                    print(f"DEBUG: Contador actualizado para {flight_key}: {self.video_capture.flight_captures[flight_key]}")
+                else:
+                    await websocket.send(json.dumps({
+                        "type": "response",
+                        "status": "not_found",
+                        "message": f"No se encontró el registro para {flight_key}"
+                    }))
+                    print(f"DEBUG: No se encontró registro para {flight_key}")
+
             elif command_type == "clear":
                 count = self.video_capture.clear_captured_frames()
                 await websocket.send(json.dumps({
@@ -116,6 +154,7 @@ class WebSocketServer:
                     "status": "cleared",
                     "cleared_count": count
                 }))
+                print(f"DEBUG: {count} frames limpiados")  # Agregado para debug
 
             elif command_type == "status":
                 status = self.video_capture.get_status()
@@ -125,19 +164,22 @@ class WebSocketServer:
                     "video_status": status
                 }))
 
-            elif command == "stop":
+            elif command_type == "stop":  # CORREGIDO: era command == "stop"
                 print("Comando: detener captura")
                 self.video_capture.stop_capture()
             
             else:
+                print(f"DEBUG: Comando desconocido: {command_type}")  # Agregado para debug
                 await websocket.send(json.dumps({
                     "type": "error",
                     "message": f"Comando desconocido: {command_type}"
                 }))
         
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            print(f"DEBUG: Error JSON: {e}")  # Agregado para debug
             await websocket.send(json.dumps({"type": "error","message": "Formato JSON inválido"}))
         except Exception as e:
+            print(f"DEBUG: Error general: {e}")  # Agregado para debug
             await websocket.send(json.dumps({"type": "error","message": f"Error procesando comando: {str(e)}"}))
     
     async def start_server(self):

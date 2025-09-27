@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  material_design_icons_flutter: ^5.0.6996
   # Para video streaming
   video_player: ^2.7.0
   # Para HTTP requests

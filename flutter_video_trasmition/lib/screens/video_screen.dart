@@ -54,42 +54,42 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
   @override
   void initState() {
-  super.initState();
-  connectToServer();
-  // Esperar un momento y limpiar
-  Future.delayed(Duration(milliseconds: 500), () {
-    sendCommand("clear");
-  });
-}
- void connectToServer() {
-  channel?.sink.close();
-  channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8000'));
-
-  channel!.stream.listen(
-    (data) => handleMessage(data),
-    onError: (error) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        connectionNotifier.value = false;
-        setState(() {
-          statusMessage = "Error: $error";
-        });
-      });
-    },
-    onDone: () {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        connectionNotifier.value = false;
-      });
-    },
-  );
-
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    connectionNotifier.value = true;
-    setState(() {
-      statusMessage = "Conectado";
+    super.initState();
+    connectToServer();
+    // Esperar un momento y limpiar
+    Future.delayed(Duration(milliseconds: 500), () {
+      sendCommand("clear");
     });
-  });
-}
+  }
 
+  void connectToServer() {
+    channel?.sink.close();
+    channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8000'));
+
+    channel!.stream.listen(
+      (data) => handleMessage(data),
+      onError: (error) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          connectionNotifier.value = false;
+          setState(() {
+            statusMessage = "Error: $error";
+          });
+        });
+      },
+      onDone: () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          connectionNotifier.value = false;
+        });
+      },
+    );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      connectionNotifier.value = true;
+      setState(() {
+        statusMessage = "Conectado";
+      });
+    });
+  }
 
   void handleMessage(dynamic data) {
     try {
@@ -119,6 +119,13 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
 
           showProcessResults(results);
         } else if (status == 'undone') {
+          // AGREGADO: Manejo específico para el comando "undo"
+          setState(() {
+            capturedCount = message['count']; // Usar el count que viene del servidor
+            statusMessage = "Frame deshecho (${message['count']} restantes)";
+          });
+        } else if (status == 'cleared') {
+          // MEJORADO: Manejo específico para el comando "clear"
           setState(() {
             capturedCount = 0;
             statusMessage = "Frames limpiados";
@@ -148,9 +155,9 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
               final result = results[index];
               return ListTile(
                 title: Text(result['filename']),
-                subtitle: Text('Predicción: ${result['prediction']}'),
+                subtitle: Text('Predicción: ${result['prediction'] ?? 'N/A'}'),
                 trailing:
-                    Text('${(result['confidence'] * 100).toStringAsFixed(1)}%'),
+                    Text('${(result['confidence'] != null ? result['confidence'] * 100 : 0).toStringAsFixed(1)}%'),
               );
             },
           ),
@@ -251,12 +258,11 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                           label: const Text("Capturar"),
                         ),
                         ElevatedButton.icon(
-  onPressed:
-      capturedCount > 0 ? ()  => sendCommand("saveCaptures") : null,
-  icon: const Icon(Icons.psychology),
-  label: Text("Guardar ($capturedCount)"),
-),
-
+                          onPressed:
+                              capturedCount > 0 ? () => sendCommand("saveCaptures") : null,
+                          icon: const Icon(Icons.psychology),
+                          label: Text("Guardar ($capturedCount)"),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -271,7 +277,6 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
                           style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.orange),
                         ),
-                        
                       ],
                     ),
                   ],
@@ -289,8 +294,6 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                
-                
                 Text(
                   lastNDC != null
                       ? "Último número de campo: $lastNDC"
