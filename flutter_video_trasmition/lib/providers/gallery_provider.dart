@@ -7,13 +7,12 @@ final galleryProvider =
   (ref) => GalleryNotifier()..loadGalleryData(),
 );
 
-class GalleryNotifier
-    extends StateNotifier<Map<String, Map<String, List<File>>>> {
+class GalleryNotifier extends StateNotifier<Map<String, Map<String, List<File>>>> {
   GalleryNotifier() : super({});
 
   void loadGalleryData() {
-    final scriptDir = Directory.current.path; // flutter_video_trasmition
-    final projectRoot = p.dirname(scriptDir); // sube un nivel -> Projecto-Final
+    final scriptDir = Directory.current.path;
+    final projectRoot = p.dirname(scriptDir);
     final dir = Directory(p.join(projectRoot, 'carpeta_frames'));
 
     Map<String, Map<String, List<File>>> data = {};
@@ -30,8 +29,8 @@ class GalleryNotifier
         final parts = filename.split('_');
 
         if (parts.length >= 6) {
-          final ndc = parts[1]; // ejemplo: "123"
-          final ndv = parts[3]; // ejemplo: "456"
+          final ndc = parts[1];
+          final ndv = parts[3];
 
           data[ndc] ??= {};
           data[ndc]![ndv] ??= [];
@@ -39,7 +38,7 @@ class GalleryNotifier
         }
       }
 
-      // Ordenar todo
+      // Ordenar archivos
       for (var ndc in data.keys) {
         for (var ndv in data[ndc]!.keys) {
           data[ndc]![ndv]!.sort((a, b) => p.basename(a.path).compareTo(p.basename(b.path)));
@@ -54,10 +53,8 @@ class GalleryNotifier
     for (var path in paths) {
       try {
         File(path).deleteSync();
-      } catch (e) {
-        // ignore error
-      }
+      } catch (_) {}
     }
-    loadGalleryData(); // recarga después de borrar
+    loadGalleryData(); // recarga toda la estructura automáticamente
   }
 }
