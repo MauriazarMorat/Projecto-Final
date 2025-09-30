@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_video_trasmition/screens/galery_screen.dart';
 import 'package:flutter_video_trasmition/screens/video_screen.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:flutter_video_trasmition/screens/stats_screen.dart';
+import 'package:flutter_video_trasmition/screens/support_screen.dart';
 // Pantalla de ejemplo para navegación
 
 
@@ -142,8 +144,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               hoveredFila = null;
                             },
                             color: const Color(0xFFFFAB91),
-                            icon: Icons.settings,
-                            text: 'Configuración',
+                            icon: Icons.query_stats,
+                            text: 'Estadisticas',
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const StatsScreen())
+                                  );
+                            },
                           ),
                         ],
                       ),
@@ -166,8 +174,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               hoveredFila = null;
                             },
                             color: const Color(0xFFFFF59D),
-                            icon: Icons.notifications,
-                            text: 'Notificaciones',
+                            icon: Icons.settings,
+                            text: 'Configuración',
                           ),
                           buildHoverableCard(
                             index: 1,
@@ -183,6 +191,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             color: const Color.fromARGB(255, 179, 18, 157),
                             icon: Icons.support,
                             text: 'Soporte',
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const SupportScreen()),
+                            ),
                           ),
                         ],
                       ),
