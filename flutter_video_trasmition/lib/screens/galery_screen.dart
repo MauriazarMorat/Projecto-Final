@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 class GaleryScreen extends StatefulWidget {
   const GaleryScreen({super.key});
@@ -21,8 +22,9 @@ class _GaleryScreenState extends State<GaleryScreen> {
   void _loadGalleryData() {
     setState(() => _isLoading = true);
 
-    final dir = Directory(
-        "C:/Users/Mauricio/Documents/GitHub/Projecto-Final/carpeta_frames");
+    final scriptDir = Directory.current.path; // flutter_video_trasmition
+    final projectRoot = p.dirname(scriptDir); // sube un nivel -> Projecto-Final
+    final dir = Directory(p.join(projectRoot, 'carpeta_frames'));
 
     Map<String, Map<String, List<File>>> data = {};
 
@@ -277,35 +279,38 @@ class _CaptureListScreenState extends State<CaptureListScreen> {
   final Set<String> _selected = {};
 
   void _deleteSelected() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirmar eliminación"),
-        content: Text("¿Eliminar ${_selected.length} capturas?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
-          ),
-          TextButton(
-            onPressed: () {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Confirmar eliminación"),
+      content: Text("¿Eliminar ${_selected.length} capturas?"),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancelar"),
+        ),
+        TextButton(
+          onPressed: () {
+            setState(() {
               for (var path in _selected) {
                 try {
                   File(path).deleteSync();
+                  widget.capturas.removeWhere((f) => f.path == path);
                 } catch (e) {
                   debugPrint("Error al borrar $path: $e");
                 }
               }
               _selected.clear();
-              Navigator.pop(context);
-              Navigator.pop(context); // Volver a la lista de vuelos
-            },
-            child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
+            });
+            Navigator.pop(context); // cerrar el AlertDialog
+          },
+          child: const Text("Eliminar", style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
