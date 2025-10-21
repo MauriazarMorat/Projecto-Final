@@ -176,6 +176,14 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
     );
   }
 
+  void _processCaptures () {
+    // Aquí puedes implementar la lógica para procesar las capturas seleccionadas
+    // Por ejemplo, subirlas a un servidor o analizarlas de alguna manera
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Procesando ${_selected.length} capturas...")),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Leer capturas siempre del provider
@@ -190,6 +198,10 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: _deleteSelected,
+            ),
+            IconButton(
+              icon: const Icon(Icons.add_photo_alternate),
+              onPressed: _processCaptures,
             ),
         ],
       ),
