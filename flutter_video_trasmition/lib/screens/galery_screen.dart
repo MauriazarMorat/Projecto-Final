@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path/path.dart' as p;
 import 'package:flutter_video_trasmition/providers/gallery_provider.dart';
+import 'package:flutter_video_trasmition/providers/selected_batch_provider.dart';
+import 'package:flutter_video_trasmition/screens/stats_screen.dart';
 
 class GaleryScreen extends ConsumerWidget {
   const GaleryScreen({super.key});
@@ -164,7 +167,6 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
           ),
           TextButton(
             onPressed: () {
-              // Borrar desde el provider
               ref.read(galleryProvider.notifier).deleteCaptures(_selected.toList());
               _selected.clear();
               Navigator.pop(context);
@@ -176,9 +178,29 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
     );
   }
 
-  void _processCaptures () {
-    // Aquí puedes implementar la lógica para procesar las capturas seleccionadas
-    // Por ejemplo, subirlas a un servidor o analizarlas de alguna manera
+  void _processCaptures() {
+    if (_selected.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Selecciona al menos una captura")),
+      );
+      return;
+    }
+
+    // Guardar el batch seleccionado en el provider
+    ref.read(selectedBatchProvider.notifier).setBatch(
+      widget.ndc,
+      widget.ndv,
+      _selected.toList(),
+    );
+
+    // Navegar a la pantalla de estadísticas
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const StatsScreen(),
+      ),
+    );
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Procesando ${_selected.length} capturas...")),
     );
@@ -186,7 +208,6 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Leer capturas siempre del provider
     final galleryData = ref.watch(galleryProvider);
     final capturas = galleryData[widget.ndc]?[widget.ndv] ?? [];
 
@@ -199,10 +220,10 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
               icon: const Icon(Icons.delete),
               onPressed: _deleteSelected,
             ),
-            IconButton(
-              icon: const Icon(Icons.add_photo_alternate),
-              onPressed: _processCaptures,
-            ),
+          IconButton(
+            icon: const Icon(Icons.add_photo_alternate),
+            onPressed: _processCaptures,
+          ),
         ],
       ),
       body: Column(
