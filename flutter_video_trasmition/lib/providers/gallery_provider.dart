@@ -13,7 +13,7 @@ class GalleryNotifier extends StateNotifier<Map<String, Map<String, List<File>>>
   void loadGalleryData() {
     final scriptDir = Directory.current.path;
     final projectRoot = p.dirname(scriptDir);
-    final dir = Directory(p.join(projectRoot, 'carpeta_frames'));
+    final dir = Directory(p.join(projectRoot, 'carpeta_frames/before'));
 
     Map<String, Map<String, List<File>>> data = {};
 

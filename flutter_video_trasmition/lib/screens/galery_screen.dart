@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:flutter_video_trasmition/providers/gallery_provider.dart';
 import 'package:flutter_video_trasmition/providers/selected_batch_provider.dart';
 import 'package:flutter_video_trasmition/screens/stats_screen.dart';
+import 'package:flutter_video_trasmition/core/websocket_service.dart'; // IMPORTAR EL SERVICIO
 
 class GaleryScreen extends ConsumerWidget {
   const GaleryScreen({super.key});
@@ -151,6 +152,7 @@ class CaptureListScreen extends ConsumerStatefulWidget {
 
 class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
   final Set<String> _selected = {};
+  bool _isProcessing = false;
 
   void _deleteSelected() {
     if (_selected.isEmpty) return;
@@ -178,7 +180,7 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
     );
   }
 
-  void _processCaptures() {
+  Future<void> _processCaptures() async {
     if (_selected.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Selecciona al menos una captura")),
@@ -186,24 +188,98 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
       return;
     }
 
-    // Guardar el batch seleccionado en el provider
-    ref.read(selectedBatchProvider.notifier).setBatch(
-      widget.ndc,
-      widget.ndv,
-      _selected.toList(),
-    );
+    setState(() {
+      _isProcessing = true;
+    });
 
-    // Navegar a la pantalla de estadísticas
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const StatsScreen(),
-      ),
-    );
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Procesando ${_selected.length} capturas...")),
-    );
+    try {
+      // Guardar el batch seleccionado en el provider
+      ref.read(selectedBatchProvider.notifier).setBatch(
+        widget.ndc,
+        widget.ndv,
+        _selected.toList(),
+      );
+
+      // Marcar como procesando
+      ref.read(selectedBatchProvider.notifier).setProcessing();
+
+      // Mostrar mensaje de inicio
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Procesando ${_selected.length} imágenes con Roboflow..."),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Conectar al servidor WebSocket si no está conectado
+      final wsService = WebSocketService.instance;
+      if (!wsService.isConnected) {
+        wsService.connect();
+        // Dar tiempo para conectar
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      // Procesar las imágenes
+      final results = await wsService.processBatchImages(
+        ndc: widget.ndc,
+        ndv: widget.ndv,
+        imagePaths: _selected.toList(),
+      );
+
+      if (results != null && results['status'] == 'success') {
+        // Guardar resultados en el provider
+        ref.read(selectedBatchProvider.notifier).setProcessingResults(results);
+
+        if (mounted) {
+          // Navegar a la pantalla de estadísticas
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const StatsScreen(),
+            ),
+          );
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "✓ Procesamiento completado: ${results['total_detections']} detecciones",
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("✗ Error al procesar las imágenes"),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error en _processCaptures: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("✗ Error: $e"),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
 
   @override
@@ -221,8 +297,18 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
               onPressed: _deleteSelected,
             ),
           IconButton(
-            icon: const Icon(Icons.add_photo_alternate),
-            onPressed: _processCaptures,
+            icon: _isProcessing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.analytics),
+            onPressed: _isProcessing ? null : _processCaptures,
+            tooltip: "Procesar con Roboflow",
           ),
         ],
       ),
@@ -237,6 +323,27 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
                 "${_selected.length} capturas seleccionadas",
                 style: const TextStyle(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
+              ),
+            ),
+          if (_isProcessing)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Colors.orange[50],
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    "Procesando imágenes con Roboflow...",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
               ),
             ),
           Expanded(

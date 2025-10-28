@@ -5,6 +5,7 @@ import os
 import base64
 import json
 from python_capture import VideoCapture
+from roboflow_processor import process_batch_images  # IMPORTAR FUNCIÓN DE ROBOFLOW
 
 class WebSocketServer:
     def __init__(self, video_path, host="localhost", port=8000):
@@ -51,16 +52,16 @@ class WebSocketServer:
             command = json.loads(message)
             command_type = command.get("command")
             
-            print(f"DEBUG: Comando recibido: {command_type}")  # Agregado para debug
+            print(f"DEBUG: Comando recibido: {command_type}")
             
             if command_type == "capture":
                 NDV = command.get("NDV", "NDV_default")
                 NDC = command.get("NDC", "NDC_default")
-                print(f"DEBUG: Capturando con NDV={NDV}, NDC={NDC}")  # Agregado para debug
+                print(f"DEBUG: Capturando con NDV={NDV}, NDC={NDC}")
                 
                 count, timestamp, filename = self.video_capture.capture_current_frame(NDV, NDC)
                 
-                print(f"DEBUG: Resultado captura - count={count}, filename={filename}")  # Agregado para debug
+                print(f"DEBUG: Resultado captura - count={count}, filename={filename}")
                 
                 await websocket.send(json.dumps({
                     "type": "response",
@@ -69,10 +70,10 @@ class WebSocketServer:
                     "timestamp": timestamp,
                     "filename": filename
                 }))
-                print(f"DEBUG: Respuesta enviada al cliente")  # Agregado para debug
+                print(f"DEBUG: Respuesta enviada al cliente")
 
             elif command_type == "saveCaptures":
-                print(f"DEBUG: Procesando capturas...")  # Agregado para debug
+                print(f"DEBUG: Procesando capturas...")
                 results = self.video_capture.process_captured_frames()
                 if results:
                     await websocket.send(json.dumps({
@@ -82,7 +83,7 @@ class WebSocketServer:
                         "count": 0,
                         "results": results,
                     }))
-                    print(f"DEBUG: {len(results)} capturas guardadas")  # Agregado para debug
+                    print(f"DEBUG: {len(results)} capturas guardadas")
                 else:
                     await websocket.send(json.dumps({
                         "type": "response",
@@ -91,7 +92,7 @@ class WebSocketServer:
                         "count": 0,
                         "results": []
                     }))
-                    print(f"DEBUG: No había frames para guardar")  # Agregado para debug
+                    print(f"DEBUG: No había frames para guardar")
 
             elif command_type == "undo":
                 if self.video_capture.captured_frames:
@@ -103,14 +104,66 @@ class WebSocketServer:
                         "count": count,
                         "filename": removed_frame["filename"]
                     }))
-                    print(f"DEBUG: Frame deshecho, quedan {count}")  # Agregado para debug
+                    print(f"DEBUG: Frame deshecho, quedan {count}")
                 else:
                     await websocket.send(json.dumps({
                         "type": "response",
                         "status": "no_frames",
                         "message": "No hay frames para deshacer"
                     }))
-                    print(f"DEBUG: No había frames para deshacer")  # Agregado para debug
+                    print(f"DEBUG: No había frames para deshacer")
+
+            # ==========================================
+            # NUEVO COMANDO: batch_image_process
+            # ==========================================
+            elif command_type == "batch_image_process":
+                try:
+                    ndc = command.get("ndc", "")
+                    ndv = command.get("ndv", "")
+                    image_paths = command.get("image_paths", [])
+                    
+                    print(f"DEBUG: Procesando batch - NDC={ndc}, NDV={ndv}, {len(image_paths)} imágenes")
+                    
+                    if not image_paths:
+                        await websocket.send(json.dumps({
+                            "type": "response",
+                            "status": "error",
+                            "message": "No se proporcionaron imágenes para procesar"
+                        }))
+                        return
+                    
+                    # Enviar mensaje de que el procesamiento comenzó
+                    await websocket.send(json.dumps({
+                        "type": "response",
+                        "status": "processing",
+                        "message": f"Procesando {len(image_paths)} imágenes..."
+                    }))
+                    
+                    # Procesar imágenes con Roboflow
+                    results = await asyncio.to_thread(
+                        process_batch_images, 
+                        image_paths, 
+                        ndc, 
+                        ndv
+                    )
+                    
+                    # Enviar resultados
+                    await websocket.send(json.dumps({
+                        "type": "response",
+                        "status": "batch_processed",
+                        "results": results
+                    }))
+                    
+                    print(f"DEBUG: Batch procesado exitosamente - {results['total_detections']} detecciones")
+                    
+                except Exception as e:
+                    print(f"ERROR procesando batch: {e}")
+                    await websocket.send(json.dumps({
+                        "type": "response",
+                        "status": "error",
+                        "message": f"Error procesando batch: {str(e)}"
+                    }))
+            # ==========================================
 
             elif command_type == "process":
                 await websocket.send(json.dumps({
@@ -154,7 +207,7 @@ class WebSocketServer:
                     "status": "cleared",
                     "cleared_count": count
                 }))
-                print(f"DEBUG: {count} frames limpiados")  # Agregado para debug
+                print(f"DEBUG: {count} frames limpiados")
 
             elif command_type == "status":
                 status = self.video_capture.get_status()
@@ -164,22 +217,22 @@ class WebSocketServer:
                     "video_status": status
                 }))
 
-            elif command_type == "stop":  # CORREGIDO: era command == "stop"
+            elif command_type == "stop":
                 print("Comando: detener captura")
                 self.video_capture.stop_capture()
             
             else:
-                print(f"DEBUG: Comando desconocido: {command_type}")  # Agregado para debug
+                print(f"DEBUG: Comando desconocido: {command_type}")
                 await websocket.send(json.dumps({
                     "type": "error",
                     "message": f"Comando desconocido: {command_type}"
                 }))
         
         except json.JSONDecodeError as e:
-            print(f"DEBUG: Error JSON: {e}")  # Agregado para debug
+            print(f"DEBUG: Error JSON: {e}")
             await websocket.send(json.dumps({"type": "error","message": "Formato JSON inválido"}))
         except Exception as e:
-            print(f"DEBUG: Error general: {e}")  # Agregado para debug
+            print(f"DEBUG: Error general: {e}")
             await websocket.send(json.dumps({"type": "error","message": f"Error procesando comando: {str(e)}"}))
     
     async def start_server(self):
