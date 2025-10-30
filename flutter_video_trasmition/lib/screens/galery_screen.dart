@@ -153,7 +153,7 @@ class CaptureListScreen extends ConsumerStatefulWidget {
 class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
   final Set<String> _selected = {};
   bool _isProcessing = false;
-
+  
   void _deleteSelected() {
     if (_selected.isEmpty) return;
 

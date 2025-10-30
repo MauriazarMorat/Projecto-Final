@@ -9,10 +9,10 @@ from io import BytesIO
 # VARIABLES DE CONFIGURACIÓN - CAMBIAR AQUÍ
 # ============================================
 API_KEY = "0vEenW14yhfXARC4RpkR"
-WORKSPACE_ID = "tu-workspace"  # Ejemplo: "mi-proyecto"
-PROJECT_ID = "tu-proyecto"     # Ejemplo: "deteccion-ganado"
-MODEL_VERSION = 1              # Ejemplo: 1, 2, 3, etc.
-CONFIDENCE_THRESHOLD = 0.4     # Umbral de confianza (0.0 a 1.0)
+WORKSPACE_ID = "proyecto-final-amle6"
+PROJECT_ID = "aeroscan-1d3ch"
+MODEL_VERSION = 1  
+CONFIDENCE_THRESHOLD = 0.6  
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)

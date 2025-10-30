@@ -27,7 +27,7 @@ class VideoCapture:
         # Calcular rutas
         current_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.dirname(current_dir)
-        self.save_dir = os.path.join(project_root, "carpeta_frames")
+        self.save_dir = os.path.join(project_root, "carpeta_frames/before")
         os.makedirs(self.save_dir, exist_ok=True)
 
         # NUEVO: Archivo JSON para persistencia
