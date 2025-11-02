@@ -193,6 +193,12 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
     });
 
     try {
+      // ✅ LIMPIAR EL BATCH ANTERIOR ANTES DE CREAR UNO NUEVO
+      ref.read(selectedBatchProvider.notifier).clear();
+      
+      // Pequeña pausa para asegurar que se limpió el estado
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // Guardar el batch seleccionado en el provider
       ref.read(selectedBatchProvider.notifier).setBatch(
         widget.ndc,
