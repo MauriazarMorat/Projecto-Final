@@ -11,7 +11,7 @@ class WebSocketServer:
     def __init__(self, video_path, host="localhost", port=8000):
         self.host = host
         self.port = port
-        self.video_capture = VideoCapture(video_path)
+        self.video_capture = VideoCapture(1)  # Índice de cámara USB
         print(f"Servidor WebSocket inicializado en ws://{host}:{port}")
     
     async def handle_client(self, websocket):
