@@ -1,0 +1,17 @@
+{
+  "status": "success",
+  "ndc": "1",
+  "ndv": "7",
+  "total_images": 1,
+  "processed_images": [
+    {
+      "original_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_7_NC_1.jpg",
+      "image_name": "NDC_1_NDV_7_NC_1.jpg",
+      "image_index": 1,
+      "detections_count": 0,
+      "predictions": []
+    }
+  ],
+  "total_detections": 0,
+  "summary": {}
+}

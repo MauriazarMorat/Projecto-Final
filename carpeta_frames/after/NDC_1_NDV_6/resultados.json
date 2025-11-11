@@ -9,7 +9,6 @@
       "image_name": "NDC_1_NDV_6_NC_003.jpg",
       "image_index": 1,
       "detections_count": 35,
-      "output_path": "c:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/after\\NDC_1_NDV_6\\annotated_001.jpg",
       "predictions": [
         {
           "x": 980.0,
@@ -19,7 +18,7 @@
           "confidence": 0.963336706161499,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "5abef5d5-c56b-4c3e-87a1-caad92d03d15",
+          "detection_id": "0d4292e9-cce4-402f-a240-6d636b7b96f0",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -31,7 +30,7 @@
           "confidence": 0.9561221599578857,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "d4953a27-0fe6-43ea-a51b-ee5a3d8f5a04",
+          "detection_id": "64447ad3-3cf9-4605-9e01-d71c24aed509",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -43,7 +42,7 @@
           "confidence": 0.9350210428237915,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "6e2317c5-1c07-4fe3-8dbb-42c99ce74c18",
+          "detection_id": "037d6a45-3fb0-40dd-af04-ccaa8bad228a",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -55,7 +54,7 @@
           "confidence": 0.9220036864280701,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "e8710614-9b06-4a0c-aef5-5cb5c2941900",
+          "detection_id": "a4196b4c-490e-4f03-969d-1a181ac5c12d",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -67,7 +66,7 @@
           "confidence": 0.9175339341163635,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "f88ebcf8-95fe-4b87-af87-675e48591acd",
+          "detection_id": "fd2976a8-96b7-4e9d-b5c6-4e382a0fcd33",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -79,7 +78,7 @@
           "confidence": 0.8961925506591797,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "929ccad4-6165-4243-9c13-59646bf2f70a",
+          "detection_id": "c920ceee-d6ad-4aa6-bfae-14b3892d1320",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -91,7 +90,7 @@
           "confidence": 0.8959565162658691,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "4b2dec4d-8b9e-4023-b0d2-d52d121549fe",
+          "detection_id": "9e737a3c-0433-4a56-99e1-fd6867f9e408",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -103,7 +102,7 @@
           "confidence": 0.8921693563461304,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "3f262989-941e-4d80-84db-4955bbb7b259",
+          "detection_id": "03c85c9a-3c0c-4673-a3f0-1c48d59f1c21",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -115,7 +114,7 @@
           "confidence": 0.891804575920105,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "d9175881-5975-4891-a3e1-8464c4ef8da5",
+          "detection_id": "5a141449-36a7-4c86-b15a-bd0098119d07",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -127,7 +126,7 @@
           "confidence": 0.8855990171432495,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "c1565bda-bf83-4204-8138-9951cce09553",
+          "detection_id": "09a113c9-df0e-453a-832c-ced791e87059",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -139,7 +138,7 @@
           "confidence": 0.8806377649307251,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "9a266cd4-59a8-45fe-aaaa-9657611239d7",
+          "detection_id": "407273ce-5173-42b6-b18b-54810e81353c",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -151,7 +150,7 @@
           "confidence": 0.8763238191604614,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "9cc910cd-44de-4c98-8e37-ad7a1970c073",
+          "detection_id": "f9f4c723-cb10-4acd-8d5a-92c504138f05",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -163,7 +162,7 @@
           "confidence": 0.8753967881202698,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "4320b041-b681-4fbf-91db-12bf87693814",
+          "detection_id": "853704b6-0539-4685-aadb-e77b8c4ee15e",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -175,7 +174,7 @@
           "confidence": 0.8692514896392822,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "be52a958-553e-43eb-afeb-4d21025308a2",
+          "detection_id": "b4bc6730-1f66-4486-8cb9-a21aeb17b044",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -187,7 +186,7 @@
           "confidence": 0.8501465916633606,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "76b96958-c4f2-4452-8f52-ccd1b8f0c19c",
+          "detection_id": "2d7e9790-c86a-4f77-87c2-1727f29a826f",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -199,7 +198,7 @@
           "confidence": 0.8358350992202759,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "e941c447-4f83-44b7-b0a2-48b5b2fac200",
+          "detection_id": "94070d3f-2dad-42dd-995a-4d251e94a1ba",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -211,7 +210,7 @@
           "confidence": 0.8327967524528503,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "f4fdec3b-36ad-40e5-affc-d1f9bb7ef8e0",
+          "detection_id": "a4d8479a-3c74-44a9-8963-3e9c75d0d5b5",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -223,7 +222,7 @@
           "confidence": 0.8224771618843079,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "82381d4c-49be-4d3b-afef-ba1cb767821f",
+          "detection_id": "40dd6e36-1c87-4646-9b77-c5bf12d910d1",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -235,7 +234,7 @@
           "confidence": 0.8189624547958374,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "cfc73305-4834-44c2-a5c7-1c1d4ad64fc4",
+          "detection_id": "e17ab3b0-4dcd-4818-a1b6-3189d11e13ce",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -247,7 +246,7 @@
           "confidence": 0.8128673434257507,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "6fb0888f-fdd1-48cf-9133-8b85bbacd04e",
+          "detection_id": "afef3829-8ff3-458a-a94c-54434f6d8a3b",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -259,7 +258,7 @@
           "confidence": 0.8082353472709656,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "52f53346-e2bd-446b-9804-a68a88282349",
+          "detection_id": "644cfafe-a141-45cf-b94d-10594cde9c23",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -271,7 +270,7 @@
           "confidence": 0.7946693301200867,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "80a0f2fc-0ba0-4e46-9894-7228d280f000",
+          "detection_id": "f607a937-8504-409e-8728-dce9fcd93e4d",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -283,7 +282,7 @@
           "confidence": 0.7795848250389099,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "b7c77971-4c6d-4c90-a17d-54703ca9b868",
+          "detection_id": "4d65c51c-0c70-49ba-bd85-c40b629db6e6",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -295,7 +294,7 @@
           "confidence": 0.7660662531852722,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "4264cae9-ff84-463c-85e9-4b07067c5393",
+          "detection_id": "7ed8d98a-6cbe-494d-b384-9ee4d524167a",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -307,7 +306,7 @@
           "confidence": 0.7318470478057861,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "7420e61c-3285-44f0-9d46-eedf33048f4d",
+          "detection_id": "ddace166-514e-45d2-ac83-75279dcb7cae",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -319,7 +318,7 @@
           "confidence": 0.720513641834259,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "610aa291-1641-4307-b395-a344d889e0b6",
+          "detection_id": "e145c7ed-d383-448a-9983-65b328afcc69",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -331,7 +330,7 @@
           "confidence": 0.7204819917678833,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "2e7b8303-2421-4cf0-a7ae-09fe6e0d51e7",
+          "detection_id": "8a0d0b84-ebfc-4703-aded-ca4d33494de2",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -343,7 +342,7 @@
           "confidence": 0.7162725925445557,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "6f3f1a4a-c3d1-43bf-8fd4-b6da741e974d",
+          "detection_id": "f00d60fd-aa96-4500-9481-b6d54f99bbcd",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -355,7 +354,7 @@
           "confidence": 0.707326352596283,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "8cdefaf8-f519-42b1-914c-df14c860baf9",
+          "detection_id": "4e0f0a17-7ebb-417b-ae42-9203b099f49d",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -367,7 +366,7 @@
           "confidence": 0.6893401145935059,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "08b215b8-2c2f-4d65-a23e-9b28b4fbf919",
+          "detection_id": "469d19e3-88d0-49cc-9bd1-5fed748cf79e",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -379,7 +378,7 @@
           "confidence": 0.6559003591537476,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "002e0abe-e2ee-40ae-a006-5e3548590055",
+          "detection_id": "9ad057c2-477c-4681-9aa2-edbac037ecd8",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -391,7 +390,7 @@
           "confidence": 0.6548891067504883,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "7848a4b2-be0f-4b3f-933e-f281750c0c82",
+          "detection_id": "caaad600-0bdc-4a89-8fb0-46181e5721a6",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -403,7 +402,7 @@
           "confidence": 0.651646077632904,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "4123a869-195a-4e95-b9ac-50071551476f",
+          "detection_id": "f3cf9a5f-442f-4bc7-9740-57e0f065eac5",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -415,7 +414,7 @@
           "confidence": 0.6362236738204956,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "1eac6b4f-89e8-4012-a900-c2fb01e0950b",
+          "detection_id": "fae86718-c10a-4e57-8715-36e30241a50b",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         },
@@ -427,7 +426,7 @@
           "confidence": 0.6014282703399658,
           "class": "Vacas",
           "class_id": 0,
-          "detection_id": "8a59954f-9c20-4cda-b6f5-1988d9239f26",
+          "detection_id": "03d3c451-27db-41dd-aa72-7c5d512c85c4",
           "image_path": "C:\\Users\\Estudio\\Documents\\GitHub\\Projecto-Final\\carpeta_frames/before\\NDC_1_NDV_6_NC_003.jpg",
           "prediction_type": "ObjectDetectionModel"
         }
