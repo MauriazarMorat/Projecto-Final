@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+// import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_video_trasmition/screens/galery_screen.dart';
 import 'package:flutter_video_trasmition/screens/video_screen.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+// WebSocketChannel is not used here to avoid triggering server capture on probe
+// import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:flutter_video_trasmition/screens/stats_screen.dart';
 import 'package:flutter_video_trasmition/screens/support_screen.dart';
 // Pantalla de ejemplo para navegación
@@ -216,21 +220,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
 
   Future<bool> checkWebSocketConnection() async {
+  // Instead of opening a WebSocket (which triggers the server's client handler
+  // and may start the camera), perform a lightweight TCP connect to the host:port.
+  // This just checks that something is listening on the port without upgrading
+  // the connection to a WebSocket — so it won't cause the server to start capture.
+  final host = '127.0.0.1';
+  final port = 8000;
+  final timeout = const Duration(seconds: 2);
+
   try {
-    final channel = WebSocketChannel.connect(
-      Uri.parse("ws://localhost:8000"), // tu dirección y puerto WS
-    );
-
-    // Esperamos una respuesta o timeout
-    final response = await channel.stream.first.timeout(
-      const Duration(seconds: 2),
-      onTimeout: () => "timeout",
-    );
-
-    channel.sink.close();
-
-    // Si recibimos algo que no sea "timeout", hay conexión
-    return response != "timeout";
+    final socket = await Socket.connect(host, port).timeout(timeout);
+    socket.destroy();
+    return true;
   } catch (e) {
     return false;
   }

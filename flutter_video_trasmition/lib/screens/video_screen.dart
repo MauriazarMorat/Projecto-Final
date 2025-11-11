@@ -56,10 +56,6 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
   void initState() {
     super.initState();
     connectToServer();
-    // Esperar un momento y limpiar
-    Future.delayed(Duration(milliseconds: 500), () {
-      sendCommand("clear");
-    });
   }
 
   void connectToServer() {
@@ -82,13 +78,6 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         });
       },
     );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      connectionNotifier.value = true;
-      setState(() {
-        statusMessage = "Conectado";
-      });
-    });
   }
 
   void handleMessage(dynamic data) {
@@ -102,8 +91,29 @@ class _VideoStreamPageState extends State<VideoStreamPage> {
         setState(() {
           currentFrame = imageBytes;
         });
+        // mark connected on first real frame
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!connectionNotifier.value) {
+            connectionNotifier.value = true;
+            setState(() {
+              statusMessage = "Conectado";
+            });
+          }
+        });
       } else if (message['type'] == 'response') {
         final status = message['status'];
+
+        // If server explicitly notifies readiness, mark connected
+        if (status == 'ready') {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!connectionNotifier.value) {
+              connectionNotifier.value = true;
+              setState(() {
+                statusMessage = "Conectado";
+              });
+            }
+          });
+        }
 
         if (status == 'captured') {
           setState(() {

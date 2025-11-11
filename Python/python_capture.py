@@ -5,6 +5,8 @@ import threading
 import json
 from collections import deque
 from datetime import datetime
+import shutil
+import uuid
 
 class VideoCapture:
     def __init__(self, device_index=1, buffer_size=30):
@@ -25,6 +27,10 @@ class VideoCapture:
 
         self.json_file = os.path.join(project_root, "flight_captures.json")
         self.flight_captures = self.load_flight_captures()
+        
+        # Auto-initialize camera on startup
+        print("🎥 Auto-inicializando cámara...")
+        self._initialize_camera()
 
     def load_flight_captures(self):
         try:
@@ -37,8 +43,8 @@ class VideoCapture:
             print(f"Error al cargar {self.json_file}: {e}")
             return {}
 
-    def start_capture(self):
-        """Inicia la captura, esperando a que la cámara esté lista"""
+    def _initialize_camera(self):
+        """Initialize camera and start the capture loop in a background thread"""
         print("🎥 Inicializando cámara...")
         cap = cv2.VideoCapture(self.device_index)
 
@@ -73,6 +79,11 @@ class VideoCapture:
         self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
         self.capture_thread.start()
         return True
+
+    def start_capture(self):
+        """No-op: camera is already initialized and running. This is called by server for compatibility."""
+        print("DEBUG: start_capture called (camera already running)")
+        return True
     
     def get_latest_frame(self):
         return self.latest_frame
@@ -103,16 +114,108 @@ class VideoCapture:
         print("📸 Cámara liberada")
 
     def stop_capture(self):
-        self.is_running = False
-        if self.capture_thread:
-            self.capture_thread.join()
-        print("🛑 Captura detenida")
+        """No-op: camera keeps running. This is never called in normal operation."""
+        print("DEBUG: stop_capture called (camera will continue running)")
 
     def get_status(self):
         return {
             "is_running": self.is_running,
             "has_frame": self.latest_frame is not None
         }
+
+    def save_flight_captures(self):
+        try:
+            with open(self.json_file, 'w', encoding='utf-8') as f:
+                json.dump(self.flight_captures, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Error guardando {self.json_file}: {e}")
+
+    def capture_current_frame(self, ndv, ndc):
+        """Save the latest frame to disk with naming NDC_{ndc}_NDV_{ndv}_NC_{count}.jpg in carpeta_frames/before"""
+        if self.latest_frame is None:
+            print("DEBUG: No hay frame disponible para capturar")
+            return (len(self.captured_frames), datetime.utcnow().strftime('%Y%m%d_%H%M%S'), "")
+
+        flight_key = f"{ndc}_{ndv}"
+        
+        # Get the current capture count for this flight
+        current_count = self.flight_captures.get(flight_key, 0) + 1
+        
+        # Build filename: NDC_{ndc}_NDV_{ndv}_NC_{current_count}.jpg
+        filename = f"NDC_{ndc}_NDV_{ndv}_NC_{current_count}.jpg"
+        file_path = os.path.join(self.save_dir, filename)
+        
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+
+        try:
+            # encode and write
+            _, buffer = cv2.imencode('.jpg', self.latest_frame, [cv2.IMWRITE_JPEG_QUALITY, 90])
+            with open(file_path, 'wb') as f:
+                f.write(buffer.tobytes())
+
+            entry = {
+                "filename": filename,
+                "path": file_path,
+                "ndv": ndv,
+                "ndc": ndc,
+                "timestamp": timestamp
+            }
+            self.captured_frames.append(entry)
+
+            # update flight capture counters
+            try:
+                self.flight_captures[flight_key] = current_count
+                self.save_flight_captures()
+                print(f"DEBUG: Captura guardada - {filename} (count={current_count} para {flight_key})")
+            except Exception as e:
+                print(f"DEBUG: Error actualizando flight_captures: {e}")
+
+            return (len(self.captured_frames), timestamp, filename)
+        except Exception as e:
+            print(f"Error guardando captura: {e}")
+            return (len(self.captured_frames), timestamp, "")
+
+    def process_captured_frames(self):
+        """Process/save captured frames and return a results list. For now returns simple placeholders."""
+        results = []
+        if not self.captured_frames:
+            return results
+
+        # Move captured files to carpeta_frames/after/<flight_key>/ and create a simple result
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        after_root = os.path.join(project_root, 'carpeta_frames', 'after')
+        os.makedirs(after_root, exist_ok=True)
+
+        for entry in list(self.captured_frames):
+            ndv = entry.get('ndv', '')
+            ndc = entry.get('ndc', '')
+            flight_key = f"NDC_{ndc}_NDV_{ndv}" if ndc or ndv else f"{ndc}_{ndv}"
+            dest_dir = os.path.join(after_root, flight_key)
+            os.makedirs(dest_dir, exist_ok=True)
+
+            src = entry.get('path')
+            if src and os.path.exists(src):
+                try:
+                    dest = os.path.join(dest_dir, entry['filename'])
+                    shutil.copy2(src, dest)
+                except Exception as e:
+                    print(f"Error moviendo archivo {src} -> {dest}: {e}")
+            # Prepare a minimal result structure (placeholder)
+            results.append({
+                'filename': entry.get('filename'),
+                'prediction': None,
+                'confidence': None
+            })
+
+        # Clear captured frames after processing
+        count = len(self.captured_frames)
+        self.captured_frames.clear()
+        return results
+
+    def clear_captured_frames(self):
+        count = len(self.captured_frames)
+        self.captured_frames.clear()
+        return count
 
 # --- EJECUCIÓN PRINCIPAL ---
 if __name__ == "__main__":
@@ -124,8 +227,7 @@ if __name__ == "__main__":
                 time.sleep(2)
                 print(f"Estado: {capturer.get_status()}")
         except KeyboardInterrupt:
-            print("\n🛑 Interrupción detectada, deteniendo cámara...")
-            capturer.stop_capture()
-            print("✅ Cámara detenida correctamente. Podés cerrar la terminal.")
+            print("\n🛑 Interrupción detectada...")
+            print("✅ Cámara seguirá corriendo en background. Podés cerrar la terminal.")
     else:
         print("❌ No se pudo iniciar la captura (la cámara no respondió).")

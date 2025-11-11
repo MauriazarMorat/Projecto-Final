@@ -72,6 +72,8 @@ class StatsScreen extends ConsumerWidget {
               if (batch.summary != null && batch.summary!.isNotEmpty)
                 _buildSummaryCard(batch),
               const SizedBox(height: 20),
+              _buildScannedImagesGallerySection(batch),
+              const SizedBox(height: 20),
               _buildImageGallerySection(batch),
             ],
           ),
@@ -316,6 +318,162 @@ class StatsScreen extends ConsumerWidget {
                 ),
               );
             }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScannedImagesGallerySection(SelectedBatch batch) {
+    final images = batch.processedImages ?? [];
+
+    if (images.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.visibility_outlined, color: Colors.deepOrange, size: 28),
+            SizedBox(width: 12),
+            Text(
+              "Imágenes Escaneadas (Anotadas)",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.deepOrange,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 450,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: images.length,
+            itemBuilder: (context, index) {
+              final processedImage = images[index];
+              return _buildScannedImageCard(processedImage);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScannedImageCard(ProcessedImage processedImage) {
+    return Container(
+      width: 300,
+      margin: const EdgeInsets.only(right: 16),
+      child: Card(
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagen escaneada anotada
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              child: SizedBox(
+                height: 300,
+                width: double.infinity,
+                child: processedImage.annotatedImageBase64 != null
+                    ? Image.memory(
+                        base64Decode(processedImage.annotatedImageBase64!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: Icon(Icons.broken_image,
+                                  size: 60, color: Colors.grey),
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.grey[300],
+                        child: const Center(
+                          child: Icon(Icons.image_not_supported,
+                              size: 60, color: Colors.grey),
+                        ),
+                      ),
+              ),
+            ),
+            // Información de la imagen
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Imagen #${processedImage.imageIndex}",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.deepOrange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info,
+                                size: 16, color: Colors.deepOrange),
+                            const SizedBox(width: 4),
+                            Text(
+                              processedImage.detectionsCount.toString(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.deepOrange[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.visibility_outlined,
+                          size: 18, color: Colors.deepOrange[700]),
+                      const SizedBox(width: 6),
+                      Text(
+                        "${processedImage.detectionsCount} detecciones",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.deepOrange[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    processedImage.imageName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

@@ -4,6 +4,8 @@ from roboflow import Roboflow
 from PIL import Image, ImageDraw
 import base64
 from io import BytesIO
+import concurrent.futures
+import threading
 
 # ============================================
 # VARIABLES DE CONFIGURACIÓN - CAMBIAR AQUÍ
@@ -91,42 +93,9 @@ class RoboflowProcessor:
             print(f"Error anotando imagen: {e}")
             return None
     
-    def save_annotated_image(self, img_path, prediction, output_dir, idx):
-        """Guardar imagen anotada en disco"""
-        try:
-            image = Image.open(img_path)
-            draw = ImageDraw.Draw(image)
-            
-            colors = ['red', 'blue', 'green', 'yellow', 'purple', 'orange']
-            
-            for i, pred in enumerate(prediction.get('predictions', [])):
-                x = pred['x']
-                y = pred['y']
-                width = pred['width']
-                height = pred['height']
-                
-                left = x - width / 2
-                top = y - height / 2
-                right = x + width / 2
-                bottom = y + height / 2
-                
-                color = colors[i % len(colors)]
-                draw.rectangle([left, top, right, bottom], outline=color, width=3)
-                
-                label = f"{pred.get('class', 'objeto')} {pred.get('confidence', 0):.2f}"
-                draw.text((left, top - 20), label, fill=color)
-            
-            output_path = os.path.join(output_dir, f"annotated_{idx:03d}.jpg")
-            image.save(output_path, quality=95)
-            
-            return output_path
-        except Exception as e:
-            print(f"Error guardando imagen anotada: {e}")
-            return None
-    
     def process_batch(self, image_paths, ndc, ndv):
         """
-        Procesar un batch completo de imágenes
+        Procesar un batch completo de imágenes con procesamiento concurrente
         
         Args:
             image_paths: Lista de rutas de las imágenes
@@ -159,62 +128,75 @@ class RoboflowProcessor:
         print(f"\n{'='*50}")
         print(f"Procesando Batch: NDC {ndc} - NDV {ndv}")
         print(f"Total de imágenes: {len(image_paths)}")
+        print(f"Usando procesamiento concurrente (max 4 workers)...")
         print(f"{'='*50}\n")
         
-        for idx, img_path in enumerate(image_paths, 1):
+        processed_count = [0]  # Mutable counter for thread safety
+        lock = threading.Lock()
+        
+        def process_single_image(args):
+            """Procesar una imagen individual"""
+            idx, img_path = args
             try:
                 if not os.path.exists(img_path):
-                    print(f"⚠ Imagen no encontrada: {img_path}")
-                    continue
+                    print(f"⚠ [{idx}] Imagen no encontrada: {img_path}")
+                    return None
                 
-                print(f"[{idx}/{len(image_paths)}] Procesando: {os.path.basename(img_path)}")
-                
-                # Hacer predicción
+                # Hacer predicción (sin esperar a que la imagen se guarde)
                 prediction = self.process_image(img_path)
                 
                 if prediction is None:
-                    print(f"  ✗ Error en predicción")
-                    continue
+                    print(f"✗ [{idx}] Error en predicción")
+                    return None
                 
                 num_detections = len(prediction.get('predictions', []))
                 
-                # Anotar imagen y obtener base64
+                # Anotar imagen y obtener base64 (sin guardar a disco)
                 img_base64 = self.annotate_image(img_path, prediction)
-                
-                # Guardar imagen anotada en disco
-                output_path = self.save_annotated_image(img_path, prediction, output_dir, idx)
                 
                 image_result = {
                     "original_path": img_path,
                     "image_name": os.path.basename(img_path),
                     "image_index": idx,
                     "detections_count": num_detections,
-                    "output_path": output_path,
                     "annotated_image_base64": img_base64,
                     "predictions": prediction.get('predictions', [])
                 }
                 
-                results["processed_images"].append(image_result)
-                results["total_detections"] += num_detections
+                with lock:
+                    processed_count[0] += 1
+                    print(f"✓ [{processed_count[0]}/{len(image_paths)}] {os.path.basename(img_path)} - {num_detections} detecciones")
                 
-                # Actualizar resumen por clase
-                for pred in prediction.get('predictions', []):
-                    class_name = pred.get('class', 'unknown')
-                    results["summary"][class_name] = results["summary"].get(class_name, 0) + 1
-                
-                print(f"  ✓ Detecciones: {num_detections}")
-                
+                return image_result
             except Exception as e:
-                print(f"  ✗ Error: {str(e)}")
-                continue
+                print(f"✗ [{idx}] Error: {str(e)}")
+                return None
         
-        # Guardar resultados en JSON
+        # Procesar imágenes en paralelo (4 workers por defecto)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [
+                executor.submit(process_single_image, (idx, img_path))
+                for idx, img_path in enumerate(image_paths, 1)
+            ]
+            
+            for future in concurrent.futures.as_completed(futures):
+                image_result = future.result()
+                if image_result:
+                    results["processed_images"].append(image_result)
+                    results["total_detections"] += image_result["detections_count"]
+                    
+                    # Actualizar resumen por clase
+                    for pred in image_result.get("predictions", []):
+                        class_name = pred.get('class', 'unknown')
+                        results["summary"][class_name] = results["summary"].get(class_name, 0) + 1
+        
+        # Guardar resultados en JSON (sin imágenes base64 para mantener archivo ligero)
         json_path = os.path.join(output_dir, "resultados.json")
+        results_to_save = results.copy()
+        for img in results_to_save["processed_images"]:
+            img.pop("annotated_image_base64", None)
+        
         with open(json_path, 'w', encoding='utf-8') as f:
-            # Guardar sin imágenes base64 para mantener archivo ligero
-            results_to_save = results.copy()
-            for img in results_to_save["processed_images"]:
-                img.pop("annotated_image_base64", None)
             json.dump(results_to_save, f, indent=2, ensure_ascii=False)
         
         print(f"\n{'='*50}")

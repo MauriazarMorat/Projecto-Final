@@ -19,7 +19,12 @@ class WebSocketServer:
         print(f"Cliente conectado: {client_address}")
         
         try:
-            self.video_capture.start_capture()
+            # Camera is already running; notify client that server is ready
+            try:
+                await websocket.send(json.dumps({"type": "response", "status": "ready"}))
+            except Exception as e:
+                print(f"Aviso: no se pudo enviar 'ready' al cliente: {e}")
+
             frame_task = asyncio.create_task(self.send_frames(websocket))
             
             async for message in websocket:
