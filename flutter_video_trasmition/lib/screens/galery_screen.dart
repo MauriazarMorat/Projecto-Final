@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:flutter_video_trasmition/providers/gallery_provider.dart';
 import 'package:flutter_video_trasmition/providers/selected_batch_provider.dart';
 import 'package:flutter_video_trasmition/screens/stats_screen.dart';
-import 'package:flutter_video_trasmition/core/websocket_service.dart'; // IMPORTAR EL SERVICIO
+import 'package:flutter_video_trasmition/core/websocket_service.dart';
 
 class GaleryScreen extends ConsumerWidget {
   const GaleryScreen({super.key});
@@ -193,23 +193,18 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
     });
 
     try {
-      // ✅ LIMPIAR EL BATCH ANTERIOR ANTES DE CREAR UNO NUEVO
       ref.read(selectedBatchProvider.notifier).clear();
       
-      // Pequeña pausa para asegurar que se limpió el estado
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Guardar el batch seleccionado en el provider
       ref.read(selectedBatchProvider.notifier).setBatch(
         widget.ndc,
         widget.ndv,
         _selected.toList(),
       );
 
-      // Marcar como procesando
       ref.read(selectedBatchProvider.notifier).setProcessing();
 
-      // Mostrar mensaje de inicio
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -219,15 +214,12 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
         );
       }
 
-      // Conectar al servidor WebSocket si no está conectado
       final wsService = WebSocketService.instance;
       if (!wsService.isConnected) {
         wsService.connect();
-        // Dar tiempo para conectar
         await Future.delayed(const Duration(milliseconds: 500));
       }
 
-      // Procesar las imágenes
       final results = await wsService.processBatchImages(
         ndc: widget.ndc,
         ndv: widget.ndv,
@@ -235,11 +227,9 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
       );
 
       if (results != null && results['status'] == 'success') {
-        // Guardar resultados en el provider
-        ref.read(selectedBatchProvider.notifier).setProcessingResults(results);
+        await ref.read(selectedBatchProvider.notifier).setProcessingResults(results);
 
         if (mounted) {
-          // Navegar a la pantalla de estadísticas
           Navigator.push(
             context,
             MaterialPageRoute(
