@@ -39,6 +39,18 @@ class WebSocketService {
     }
 
     try {
+      // Crear una nueva conexión para cada request (evitar problemas de stream)
+      if (_channel != null) {
+        try {
+          _channel!.sink.close();
+        } catch (_) {}
+        _channel = null;
+      }
+
+      // Reconectar
+      _channel = WebSocketChannel.connect(Uri.parse(_serverUrl));
+      await Future.delayed(const Duration(milliseconds: 200));
+
       // Enviar comando
       final command = jsonEncode({
         'command': 'batch_image_process',
@@ -53,10 +65,10 @@ class WebSocketService {
       // Esperar respuesta
       await for (final message in _channel!.stream) {
         final data = jsonDecode(message as String);
-        
+
         if (data['type'] == 'response') {
           final status = data['status'];
-          
+
           if (status == 'processing') {
             print('⏳ ${data['message']}');
             continue; // Esperar siguiente mensaje

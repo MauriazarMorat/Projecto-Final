@@ -1,20 +1,21 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path/path.dart' as p;
-import '../providers/selected_batch_provider.dart';
+import '../providers/processed_gallery_provider.dart';
 
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final batch = ref.watch(selectedBatchProvider);
+    final processedData = ref.watch(processedGalleryProvider);
 
-    if (batch == null) {
+    if (processedData.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text("Resultados")),
+        appBar: AppBar(
+          title: const Text("Resultados Procesados"),
+          backgroundColor: Colors.teal,
+        ),
         body: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -31,44 +32,184 @@ class StatsScreen extends ConsumerWidget {
       );
     }
 
-    if (!batch.isProcessed) {
-      return Scaffold(
-        appBar: AppBar(title: const Text("Procesando...")),
-        body: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 24),
-              Text(
-                "Procesando imágenes con Roboflow...",
-                style: TextStyle(fontSize: 18),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final images = batch.processedImages ?? [];
-    final totalDetections = batch.totalDetections ?? 0;
+    final sortedNDCs = processedData.keys.toList()
+      ..sort((a, b) => int.parse(a).compareTo(int.parse(b)));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Resultados del Escaneo"),
+        title: const Text("Resultados Procesados"),
         backgroundColor: Colors.teal,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_a_photo),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            tooltip: "Escanear más imágenes",
+            icon: const Icon(Icons.refresh),
+            onPressed: () => ref.read(processedGalleryProvider.notifier).refresh(),
+            tooltip: "Actualizar",
           ),
         ],
       ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: sortedNDCs.length,
+          itemBuilder: (context, index) {
+            final ndc = sortedNDCs[index];
+            final ndvMap = processedData[ndc]!;
+            final ndvCount = ndvMap.keys.length;
+            final totalImages = ndvMap.values
+                .map((list) => list.length)
+                .reduce((a, b) => a + b);
+
+            return Card(
+              elevation: 4,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => StatsNDVScreen(
+                        ndc: ndc,
+                        ndvMap: ndvMap,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.folder, size: 48, color: Colors.teal[600]),
+                      const SizedBox(height: 12),
+                      Text("NDC $ndc",
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text("$ndvCount vuelos",
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey[600])),
+                      Text("$totalImages imágenes",
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey[600])),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class StatsNDVScreen extends ConsumerWidget {
+  final String ndc;
+  final Map<String, List<ProcessedImageData>> ndvMap;
+
+  const StatsNDVScreen({
+    super.key,
+    required this.ndc,
+    required this.ndvMap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sortedNDVs = ndvMap.keys.toList()
+      ..sort((a, b) => int.parse(a).compareTo(int.parse(b)));
+
+    return Scaffold(
+      appBar: AppBar(title: Text("NDC $ndc - Vuelos")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: GridView.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: sortedNDVs.length,
+          itemBuilder: (context, index) {
+            final ndv = sortedNDVs[index];
+            final images = ndvMap[ndv]!;
+            final totalDetections =
+                images.fold<int>(0, (sum, img) => sum + img.detectionsCount);
+
+            return Card(
+              elevation: 4,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => StatsNCScreen(
+                        ndc: ndc,
+                        ndv: ndv,
+                        images: images,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.flight, size: 48, color: Colors.green[600]),
+                      const SizedBox(height: 12),
+                      Text("NDV $ndv",
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      Text("${images.length} capturas",
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey[600])),
+                      Text("$totalDetections vacas detectadas",
+                          style: TextStyle(
+                              fontSize: 14, color: Colors.grey[600])),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class StatsNCScreen extends ConsumerWidget {
+  final String ndc;
+  final String ndv;
+  final List<ProcessedImageData> images;
+
+  const StatsNCScreen({
+    super.key,
+    required this.ndc,
+    required this.ndv,
+    required this.images,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final totalDetections =
+        images.fold<int>(0, (sum, img) => sum + img.detectionsCount);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("NDC $ndc - NDV $ndv"),
+        backgroundColor: Colors.teal,
+      ),
       body: Column(
         children: [
+          // Summary Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -109,13 +250,14 @@ class StatsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          // Image Comparison List
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: images.length,
               itemBuilder: (context, index) {
-                final processedImage = images[index];
-                return _buildImageComparisonCard(processedImage);
+                final image = images[index];
+                return _buildImageComparisonCard(image, index + 1);
               },
             ),
           ),
@@ -124,7 +266,7 @@ class StatsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildImageComparisonCard(ProcessedImage processedImage) {
+  Widget _buildImageComparisonCard(ProcessedImageData image, int index) {
     return Card(
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 20),
@@ -137,13 +279,14 @@ class StatsScreen extends ConsumerWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.teal.shade100,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    "Captura #${processedImage.imageIndex}",
+                    "Captura #$index",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -155,7 +298,7 @@ class StatsScreen extends ConsumerWidget {
                 Icon(Icons.pets, color: Colors.teal.shade600, size: 20),
                 const SizedBox(width: 6),
                 Text(
-                  "Conteo de vacas: ${processedImage.detectionsCount}",
+                  "Conteo de vacas: ${image.detectionsCount}",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -181,20 +324,9 @@ class StatsScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          File(processedImage.originalPath),
+                        child: _buildImageWidget(
+                          image.beforePath,
                           height: 200,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              height: 200,
-                              color: Colors.grey[300],
-                              child: const Center(
-                                child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                              ),
-                            );
-                          },
                         ),
                       ),
                     ],
@@ -215,29 +347,10 @@ class StatsScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: processedImage.annotatedImageBase64 != null
-                            ? Image.memory(
-                                base64Decode(processedImage.annotatedImageBase64!),
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    height: 200,
-                                    color: Colors.grey[300],
-                                    child: const Center(
-                                      child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                                    ),
-                                  );
-                                },
-                              )
-                            : Container(
-                                height: 200,
-                                color: Colors.grey[300],
-                                child: const Center(
-                                  child: Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
-                                ),
-                              ),
+                        child: _buildImageWidget(
+                          image.afterPath,
+                          height: 200,
+                        ),
                       ),
                     ],
                   ),
@@ -246,7 +359,7 @@ class StatsScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              processedImage.imageName,
+              image.ncFolder,
               style: TextStyle(
                 fontSize: 12,
                 color: Colors.grey[600],
@@ -256,6 +369,36 @@ class StatsScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImageWidget(String imagePath, {required double height}) {
+    final file = File(imagePath);
+
+    if (!file.existsSync()) {
+      return Container(
+        height: height,
+        color: Colors.grey[300],
+        child: const Center(
+          child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+        ),
+      );
+    }
+
+    return Image.file(
+      file,
+      height: height,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          height: height,
+          color: Colors.grey[300],
+          child: const Center(
+            child: Icon(Icons.broken_image, size: 40, color: Colors.grey),
+          ),
+        );
+      },
     );
   }
 }

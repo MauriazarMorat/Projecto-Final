@@ -1,10 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:path/path.dart' as p;
 import 'package:flutter_video_trasmition/providers/gallery_provider.dart';
 import 'package:flutter_video_trasmition/providers/selected_batch_provider.dart';
+import 'package:flutter_video_trasmition/providers/processed_gallery_provider.dart';
 import 'package:flutter_video_trasmition/screens/stats_screen.dart';
 import 'package:flutter_video_trasmition/core/websocket_service.dart';
 
@@ -194,7 +193,7 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
 
     try {
       ref.read(selectedBatchProvider.notifier).clear();
-      
+
       await Future.delayed(const Duration(milliseconds: 100));
 
       ref.read(selectedBatchProvider.notifier).setBatch(
@@ -227,7 +226,9 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
       );
 
       if (results != null && results['status'] == 'success') {
-        await ref.read(selectedBatchProvider.notifier).setProcessingResults(results);
+        // Refresh processed gallery to show new images
+        await Future.delayed(const Duration(milliseconds: 500));
+        ref.read(processedGalleryProvider.notifier).refresh();
 
         if (mounted) {
           Navigator.push(
@@ -248,12 +249,19 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
           );
         }
       } else {
+        // Handle error gracefully
         if (mounted) {
+          setState(() {
+            _isProcessing = false;
+          });
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("✗ Error al procesar las imágenes"),
+            SnackBar(
+              content: Text(
+                "✗ Error al procesar: ${results?['message'] ?? 'Error desconocido'}",
+              ),
               backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
+              duration: const Duration(seconds: 3),
             ),
           );
         }
@@ -261,6 +269,10 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
     } catch (e) {
       print('Error en _processCaptures: $e');
       if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("✗ Error: $e"),
@@ -268,12 +280,6 @@ class _CaptureListScreenState extends ConsumerState<CaptureListScreen> {
             duration: const Duration(seconds: 3),
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isProcessing = false;
-        });
       }
     }
   }

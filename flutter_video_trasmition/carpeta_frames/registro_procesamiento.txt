@@ -1,0 +1,16 @@
+=== PROCESAMIENTO: 2025-11-17T16:31:40.557565 ===
+NDC: 1
+NDV: 5
+Total de imágenes: 1
+Total de vacas detectadas: 25
+
+=====================================
+
+=== PROCESAMIENTO: 2025-11-17T16:38:52.869379 ===
+NDC: 1
+NDV: 1
+Total de imágenes: 1
+Total de vacas detectadas: 32
+
+=====================================
+

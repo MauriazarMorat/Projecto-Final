@@ -58,8 +58,8 @@ class RoboflowProcessor:
             print(f"Error procesando imagen {img_path}: {e}")
             return None
     
-    def annotate_image(self, img_path, prediction):
-        """Anotar imagen con las detecciones y retornar en base64"""
+    def annotate_image(self, img_path, prediction, output_path=None):
+        """Anotar imagen con las detecciones y retornar en base64, opcionalmente guardar a disco"""
         try:
             image = Image.open(img_path)
             draw = ImageDraw.Draw(image)
@@ -82,6 +82,10 @@ class RoboflowProcessor:
                 
                 label = f"{pred.get('class', 'objeto')} {pred.get('confidence', 0):.2f}"
                 draw.text((left, top - 20), label, fill=color)
+            
+            # Guardar a disco si se proporciona output_path
+            if output_path:
+                image.save(output_path, format="JPEG", quality=90)
             
             # Convertir a base64
             buffered = BytesIO()
@@ -111,7 +115,8 @@ class RoboflowProcessor:
                 "message": "No se pudo inicializar el modelo de Roboflow"
             }
         
-        # Crear carpeta de salida
+        # Crear carpeta de salida base para after y carpeta agregada por batch
+        os.makedirs(OUTPUT_FOLDER, exist_ok=True)
         output_dir = os.path.join(OUTPUT_FOLDER, f"NDC_{ndc}_NDV_{ndv}")
         os.makedirs(output_dir, exist_ok=True)
         
@@ -151,12 +156,40 @@ class RoboflowProcessor:
                 
                 num_detections = len(prediction.get('predictions', []))
                 
-                # Anotar imagen y obtener base64 (sin guardar a disco)
-                img_base64 = self.annotate_image(img_path, prediction)
-                
+                # Crear nombre para la imagen anotada y carpeta por imagen
+                base_name = os.path.basename(img_path)
+                name_without_ext = os.path.splitext(base_name)[0]
+
+                # Carpeta por imagen: carpeta_frames/after/NDC_x_NDV_y_NC_z/
+                per_image_dir = os.path.join(OUTPUT_FOLDER, name_without_ext)
+                os.makedirs(per_image_dir, exist_ok=True)
+
+                # Nombre del archivo dentro de la carpeta (usar el mismo nombre que la carpeta + .jpg)
+                annotated_filename = f"{name_without_ext}.jpg"
+                annotated_path = os.path.join(per_image_dir, annotated_filename)
+
+                # Anotar imagen y guardar a disco
+                img_base64 = self.annotate_image(img_path, prediction, output_path=annotated_path)
+
+                # Guardar un resultados por imagen dentro de su carpeta
+                try:
+                    per_image_results = {
+                        "image": annotated_filename,
+                        "original_path": img_path,
+                        "detections_count": num_detections,
+                        "predictions": prediction.get('predictions', [])
+                    }
+                    resultados_path = os.path.join(per_image_dir, 'resultados.json')
+                    with open(resultados_path, 'w', encoding='utf-8') as rf:
+                        json.dump(per_image_results, rf, indent=2, ensure_ascii=False)
+                except Exception as e:
+                    print(f"Error guardando resultados por imagen: {e}")
+
                 image_result = {
                     "original_path": img_path,
                     "image_name": os.path.basename(img_path),
+                    "annotated_image_name": annotated_filename,
+                    "annotated_image_path": annotated_path,
                     "image_index": idx,
                     "detections_count": num_detections,
                     "annotated_image_base64": img_base64,
@@ -211,6 +244,13 @@ class RoboflowProcessor:
 
 # Instancia global del procesador
 processor = RoboflowProcessor()
+
+# Inicializar modelo en background al importar el módulo para acelerar el primer procesamiento
+try:
+    init_thread = threading.Thread(target=processor.initialize, daemon=True)
+    init_thread.start()
+except Exception as e:
+    print(f"Advertencia: No se pudo iniciar inicialización en background: {e}")
 
 
 def process_batch_images(image_paths, ndc, ndv):

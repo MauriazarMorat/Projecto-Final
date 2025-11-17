@@ -7,6 +7,7 @@ from collections import deque
 from datetime import datetime
 import shutil
 import uuid
+import numpy as np
 
 class VideoCapture:
     def __init__(self, device_index=1, buffer_size=30):
@@ -51,9 +52,12 @@ class VideoCapture:
         # Esperar hasta que OpenCV abra la cámara realmente
         start_time = time.time()
         while not cap.isOpened():
-            if time.time() - start_time > 240:
-                print("❌ No se pudo abrir la cámara (timeout de 240 s).")
-                return False
+            if time.time() - start_time > 5:  # Reduced timeout for faster fallback
+                print("❌ No se pudo abrir la cámara (timeout).")
+                print("⚠️ Usando generador de frames de prueba (modo sin cámara)...")
+                cap.release()
+                self._start_dummy_capture()
+                return True
             time.sleep(0.5)
             cap.open(self.device_index)
 
@@ -69,8 +73,10 @@ class VideoCapture:
             time.sleep(0.5)
         else:
             print("❌ No se recibió ningún frame en 30 segundos.")
+            print("⚠️ Usando generador de frames de prueba (modo sin cámara)...")
             cap.release()
-            return False
+            self._start_dummy_capture()
+            return True
 
         # Cámara lista → cerrar prueba y empezar el hilo
         cap.release()
@@ -79,6 +85,78 @@ class VideoCapture:
         self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
         self.capture_thread.start()
         return True
+
+    def _start_dummy_capture(self):
+        """Start dummy frame generator for headless/no-camera mode"""
+        print("🚀 Generador de frames iniciado (modo de prueba)...")
+        self.is_running = True
+        self.capture_thread = threading.Thread(target=self._dummy_capture_loop, daemon=True)
+        self.capture_thread.start()
+
+    def _dummy_capture_loop(self):
+        """Generate dummy test frames with patterns and timestamp"""
+        self.fps = 30
+        self.frame_delay = 1.0 / self.fps
+        frame_count = 0
+
+        print(f"✅ Generador de frames corriendo - FPS: {self.fps}")
+
+        while self.is_running:
+            try:
+                # Create a test frame with color gradient and timestamp
+                frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                
+                # Create color gradient background
+                for i in range(480):
+                    frame[i, :] = [
+                        int(255 * i / 480),           # Red gradient
+                        int(128),                     # Green constant
+                        int(255 * (1 - i / 480))     # Blue inverse gradient
+                    ]
+                
+                # Add timestamp text
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                cv2.putText(
+                    frame,
+                    f"TEST FRAME - {timestamp}",
+                    (20, 100),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.2,
+                    (255, 255, 255),
+                    2
+                )
+                
+                # Add frame counter
+                frame_count += 1
+                cv2.putText(
+                    frame,
+                    f"Frame #{frame_count}",
+                    (20, 150),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (255, 255, 255),
+                    2
+                )
+                
+                # Add "NO CAMERA" watermark
+                cv2.putText(
+                    frame,
+                    "SIN CAMARA - TEST MODE",
+                    (20, 450),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 0, 255),
+                    2
+                )
+                
+                self.latest_frame = frame.copy()
+                self.frame_buffer.append(frame)
+                time.sleep(self.frame_delay)
+            except Exception as e:
+                print(f"Error en generador de frames: {e}")
+                time.sleep(0.1)
+
+        print("📸 Generador de frames detenido")
 
     def start_capture(self):
         """No-op: camera is already initialized and running. This is called by server for compatibility."""
@@ -177,37 +255,25 @@ class VideoCapture:
 
     def process_captured_frames(self):
         """Process/save captured frames and return a results list. For now returns simple placeholders."""
+        """
+        Return metadata for captured frames without moving them to 'after'.
+        Captured images are already saved in `carpeta_frames/before/` by `capture_current_frame`.
+        This function returns a list of metadata entries and clears the in-memory captured_frames list.
+        """
         results = []
         if not self.captured_frames:
             return results
 
-        # Move captured files to carpeta_frames/after/<flight_key>/ and create a simple result
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        after_root = os.path.join(project_root, 'carpeta_frames', 'after')
-        os.makedirs(after_root, exist_ok=True)
-
         for entry in list(self.captured_frames):
-            ndv = entry.get('ndv', '')
-            ndc = entry.get('ndc', '')
-            flight_key = f"NDC_{ndc}_NDV_{ndv}" if ndc or ndv else f"{ndc}_{ndv}"
-            dest_dir = os.path.join(after_root, flight_key)
-            os.makedirs(dest_dir, exist_ok=True)
-
-            src = entry.get('path')
-            if src and os.path.exists(src):
-                try:
-                    dest = os.path.join(dest_dir, entry['filename'])
-                    shutil.copy2(src, dest)
-                except Exception as e:
-                    print(f"Error moviendo archivo {src} -> {dest}: {e}")
-            # Prepare a minimal result structure (placeholder)
             results.append({
                 'filename': entry.get('filename'),
-                'prediction': None,
-                'confidence': None
+                'path': entry.get('path'),
+                'ndc': entry.get('ndc'),
+                'ndv': entry.get('ndv'),
+                'timestamp': entry.get('timestamp')
             })
 
-        # Clear captured frames after processing
+        # Clear captured frames after returning metadata
         count = len(self.captured_frames)
         self.captured_frames.clear()
         return results
